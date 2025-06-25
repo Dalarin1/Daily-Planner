@@ -57,6 +57,16 @@ int main()
 	);
 	myButton.OnHover = button_callback;
 
+	Button anotherButton(
+		vector3(-0.75f, 0.5f, 0.0f),
+		vector3(0.1f, 0.1f, 0.0f),
+		Color(0, 0, 0),
+		Color(192, 192, 0),
+		nullptr,
+		button_callback);
+
+	Button *buttons[] = {&myButton, &anotherButton};
+
 	glViewport(0, 0, 800, 800);
 	double x, y;
 
@@ -68,11 +78,15 @@ int main()
 		glClearColor(0.17f, 0.57f, 0.24f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 		glfwGetCursorPos(window, &x, &y);
-		myButton.CheckHover(x, y, 800, 800);
+
+		for (int i = 0; i < 2; i++)
+		{
+			buttons[i]->CheckHover(x, y, 800, 800);
+		}
 
 		glUseProgram(shaderProgram);
-		myButton.Draw(shaderProgram);
-
+		myButton.Draw(shaderProgram);	
+		anotherButton.Draw(shaderProgram);
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 	}

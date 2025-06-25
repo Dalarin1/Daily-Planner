@@ -1,6 +1,6 @@
 #pragma once
 #include <cmath>
-#include <concepts>
+
 struct vector3
 {
 public:

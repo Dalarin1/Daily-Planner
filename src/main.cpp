@@ -11,8 +11,8 @@ Learning Path: Local storage, calendar UI, and reminder notifications.
 Open-source Focus: Contributors can add recurring tasks, theme customization, and more notification options.
 */
 #include <iostream>
-#include "raphics.h"
-#include "ShaderLoader.h"
+#include "raphics.hpp"
+#include "ShaderLoader.hpp"
 
 void processInput(GLFWwindow *window)
 {

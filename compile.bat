@@ -1,6 +1,6 @@
 @echo off
 
-call  C:\apps\msys\ucrt64\bin\g++.exe ^
+call  g++.exe ^
      -g ^
     -std=c++20 ^
     -I include ^

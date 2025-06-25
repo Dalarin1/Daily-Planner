@@ -68,13 +68,7 @@ int main()
 		glClearColor(0.17f, 0.57f, 0.24f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 		glfwGetCursorPos(window, &x, &y);
-		if (myButton.IsHovered(x, y, 800, 800))
-		{
-			myButton.OnHover(&myButton);
-		}
-		else{
-			myButton.ResetColors();
-		}
+		myButton.CheckHover(x, y, 800, 800);
 
 		glUseProgram(shaderProgram);
 		myButton.Draw(shaderProgram);

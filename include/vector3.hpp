@@ -127,14 +127,6 @@ float dot(vector4 a, vector4 b)
     return sqrt(a.X * b.X + a.Y * b.Y + a.Z * b.Z + a.W * b.W);
 }
 
-// template <typename T>
-// concept IComparable = requires(T a, T b) {
-//     (a < b)->std::convertible_to<bool>;
-//     (a > b)->std::convertible_to<bool>;
-//     (a == b)->std::convertible_to<bool>;
-// } 
-
-
 template <typename T>
 T clamp(T value, T min, T max)
 {

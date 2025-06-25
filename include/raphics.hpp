@@ -3,13 +3,6 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
-enum ButtonState
-{
-    HOVERED,
-    PRESSED,
-    NORMAL
-};
-
 class Button
 {
 public:
@@ -22,7 +15,7 @@ public:
     void (*Onclick)(Button *);
     void (*OnHover)(Button *);
 
-    ButtonState State = NORMAL;
+    bool is_hovered = false;
 
     GLuint vbo;
     GLuint vao;
@@ -69,17 +62,29 @@ public:
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         glBindVertexArray(0);
     }
+    void CheckHover(double mouseX, double mouseY, int windowWidth, int windowHeight)
+    {
+        bool newHoverState = IsHovered(mouseX, mouseY, windowWidth, windowHeight);
+
+        if (newHoverState && !is_hovered)
+        {
+            // Только при наведении
+            if (OnHover)
+                OnHover(this);
+            is_hovered = true;
+        }
+        else if (!newHoverState && is_hovered)
+        {
+            // Только при снятии наведения
+            ResetColors();
+            is_hovered = false;
+        }
+    }
     bool IsHovered(double mouseX, double mouseY, int windowWidth, int windowHeight)
     {
         float xabs = 2 * (mouseX / windowWidth) - 1;
         float yabs = 1 - 2 * (mouseY / windowHeight);
-        if(Bounds.Contains(vector3(xabs, yabs, 0))){
-            State = HOVERED;
-        }
-        else{
-            State = NORMAL;
-        }
-        return State == HOVERED;
+        return Bounds.Contains(vector3(xabs, yabs, 0));
     }
     void MoveToCursor(double x, double y, int windowWidth, int widnowHeight)
     {
@@ -108,7 +113,8 @@ public:
         glBindVertexArray(0);
     }
     void ResetColors()
-    {
+    {   
+        std::cout<<"RESET COLOR\n";
         current_bkg_color = base_bkg_color;
         current_border_color = base_border_color;
     }

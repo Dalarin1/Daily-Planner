@@ -13,6 +13,7 @@ Open-source Focus: Contributors can add recurring tasks, theme customization, an
 #include <iostream>
 #include "raphics.hpp"
 #include "ShaderLoader.hpp"
+#include "Task.hpp"
 
 void processInput(GLFWwindow *window)
 {
@@ -66,7 +67,7 @@ int main()
 		button_callback);
 
 	Button *buttons[] = {&myButton, &anotherButton};
-
+	
 	glViewport(0, 0, 800, 800);
 	double x, y;
 

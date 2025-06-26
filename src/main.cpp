@@ -24,7 +24,7 @@ void processInput(GLFWwindow *window)
 
 void button_callback(Button *btn)
 {
-	btn->current_bkg_color = btn->base_bkg_color.Lighten(100.0f);
+	btn->current_bkg_color = btn->base_bkg_color.Lerp(Color(255, 0, 200), 60.0f);
 }
 int main()
 {
@@ -52,15 +52,15 @@ int main()
 	Button myButton(
 		vector3(0, 0, 0.0f),
 		vector3(0.25f, 0.5f, 0.0f),
-		Color(0, 0, 0),	   // Цвет фона
-		Color(128, 0, 128) // Цвет границы
+		Color(255, 255, 255), // Цвет фона
+		Color(128, 0, 128)	  // Цвет границы
 	);
 	myButton.OnHover = button_callback;
 
 	Button anotherButton(
 		vector3(-0.75f, 0.5f, 0.0f),
 		vector3(0.1f, 0.1f, 0.0f),
-		Color(0, 0, 0),
+		Color(255, 255, 255),
 		Color(192, 192, 0),
 		nullptr,
 		button_callback);
@@ -85,7 +85,7 @@ int main()
 		}
 
 		glUseProgram(shaderProgram);
-		myButton.Draw(shaderProgram);	
+		myButton.Draw(shaderProgram);
 		anotherButton.Draw(shaderProgram);
 		glfwSwapBuffers(window);
 		glfwPollEvents();

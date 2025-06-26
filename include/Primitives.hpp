@@ -47,12 +47,13 @@ public:
     }
 
     /// @brief Линейная интерполяция между цветами
-    Color Lerp(const Color& target, float t) const {
-        t = clamp(t, 0.0f, 1.0f);
+    /// @param amount в промежутке от 0 до 100
+    Color Lerp(const Color& target, float amount) const {
+        amount = clamp(amount, 0.0f, 100.0f) / 100.0f;
         return Color(
-            Red + (target.Red - Red) * t,
-            Green + (target.Green - Green) * t,
-            Blue + (target.Blue - Blue) * t
+            Red + (target.Red - Red) * amount,
+            Green + (target.Green - Green) * amount,
+            Blue + (target.Blue - Blue) * amount
         );
     }
 };

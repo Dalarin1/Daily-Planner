@@ -26,6 +26,7 @@ public:
     void update_task(int task_id, const Task &updated_task);
 
     void set_view_mode(ViewMode mode);
+    ViewMode get_view_mode() const;
     void navigate_to_date(const std::chrono::system_clock::time_point &date);
     void go_to_today();
 
@@ -89,6 +90,7 @@ void Calendar::update_task(int task_id, const Task &updated_task)
 }
 
 void Calendar::set_view_mode(ViewMode mode) { _current_view = mode; }
+Calendar::ViewMode Calendar::get_view_mode() const {return this->_current_view;}
 void Calendar::navigate_to_date(const std::chrono::system_clock::time_point &date) { _current_date = date; }
 void Calendar::go_to_today() { _current_date = std::chrono::system_clock::now(); }
 

@@ -2,6 +2,7 @@
 #include "Primitives.hpp"
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+#include <functional>
 
 class Button
 {
@@ -12,8 +13,8 @@ public:
     Color current_border_color;
 
     Rectangle Bounds;
-    void (*Onclick)(Button *);
-    void (*OnHover)(Button *);
+    std::function<void(Button *)> OnClick;
+    std::function<void(Button *)> OnHover;
 
     bool is_hovered = false;
 
@@ -26,8 +27,8 @@ public:
            vector3 _size = vector3(0, 0, 0),
            Color _backgroundColor = Color(255, 255, 255),
            Color _borderColor = Color(0, 0, 0),
-           void (*_onClick)(Button *) = nullptr,
-           void (*_onHover)(Button *) = nullptr)
+           std::function<void(Button *)> _onClick = nullptr,
+           std::function<void(Button *)> _onHover = nullptr)
     {
         base_bkg_color = _backgroundColor;
         base_border_color = _borderColor;
@@ -35,7 +36,7 @@ public:
         current_border_color = base_border_color;
 
         Bounds = Rectangle(_pos, _size);
-        Onclick = _onClick;
+        OnClick = _onClick;
         OnHover = _onHover;
 
         // Инициализация OpenGL объектов
@@ -92,7 +93,7 @@ public:
         Bounds.Update();
         UpdateGeometry();
     }
-    void Draw(unsigned int shaderProgram)
+    void Draw(unsigned int shaderProgram) const
     {
         GLint colorloc = glGetUniformLocation(shaderProgram, "color");
         glUniform4f(colorloc,
@@ -113,8 +114,8 @@ public:
         glBindVertexArray(0);
     }
     void ResetColors()
-    {   
-        std::cout<<"RESET COLOR\n";
+    {
+        std::cout << "RESET COLOR\n";
         current_bkg_color = base_bkg_color;
         current_border_color = base_border_color;
     }
@@ -127,4 +128,3 @@ public:
         }
     }
 };
-

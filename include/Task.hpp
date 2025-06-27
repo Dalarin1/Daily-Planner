@@ -22,7 +22,6 @@ public:
          const std::string &description = "",
          const std::string &category = "",
          Priority priority = Priority::Medium,
-         const std::chrono::system_clock::time_point &start_date = std::chrono::system_clock::time_point(),
          const std::chrono::system_clock::time_point &until_date = std::chrono::system_clock::time_point(),
          const std::chrono::system_clock::time_point &reminder = std::chrono::system_clock::time_point());
 
@@ -30,7 +29,6 @@ public:
                 const std::string &new_description = "",
                 const std::string &new_category = "",
                 Priority new_priority = Priority::Medium,
-                const std::chrono::system_clock::time_point &new_start_date = std::chrono::system_clock::time_point(),
                 const std::chrono::system_clock::time_point &new_until_date = std::chrono::system_clock::time_point(),
                 const std::chrono::system_clock::time_point &new_reminder = std::chrono::system_clock::time_point());
 
@@ -73,7 +71,6 @@ Task::Task(const std::string &title,
            const std::string &description,
            const std::string &category,
            Priority priority,
-           const std::chrono::system_clock::time_point &start_date,
            const std::chrono::system_clock::time_point &until_date,
            const std::chrono::system_clock::time_point &reminder)
 {
@@ -82,7 +79,6 @@ Task::Task(const std::string &title,
     _category = category;
     _priority = priority;
     _status = Status::Undone;
-    _start_date = start_date;
     _until_date = until_date;
     _reminder = reminder;
     _is_repeating = false;
@@ -94,7 +90,6 @@ void Task::update(const std::string &new_title,
                   const std::string &new_description,
                   const std::string &new_category,
                   Priority new_priority,
-                  const std::chrono::system_clock::time_point &new_start_date,
                   const std::chrono::system_clock::time_point &new_until_date,
                   const std::chrono::system_clock::time_point &new_reminder)
 {
@@ -102,7 +97,6 @@ void Task::update(const std::string &new_title,
     _description = new_description;
     _category = new_category;
     _priority = new_priority;
-    _start_date = new_start_date;
     _until_date = new_until_date;
     _reminder = new_reminder;
 }

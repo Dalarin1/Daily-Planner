@@ -3,6 +3,7 @@
 #include <memory>
 #include "Calendar.hpp"
 #include "raphics.hpp"
+
 class UIManager
 {
 public:
@@ -40,7 +41,8 @@ UIManager::UIManager(unsigned int shader_program)
     _calendar = Calendar();
     _calendar.set_view_mode(Calendar::ViewMode::Month);
     _view_switch_buttons[Calendar::ViewMode::Day] = std::make_unique<Button>(
-        vector3(0, 0, 0), vector3(0.25, 0.125, 0),
+        vector3(-0.5, 0.75, 0), 
+        vector3(0.25, 0.125, 0),
         Color(0, 0, 0), Color(153, 50, 204),
         [this](Button *btn)
         {
@@ -52,7 +54,8 @@ UIManager::UIManager(unsigned int shader_program)
         });
 
     _view_switch_buttons[Calendar::ViewMode::Week] = std::make_unique<Button>(
-        vector3(0.35, 0, 0), vector3(0.25, 0.125, 0),
+        vector3(-0.25,  0.75, 0), 
+        vector3(0.25, 0.125, 0),
         Color(0, 0, 0), Color(153, 50, 204),
         [this](Button *btn)
         {
@@ -64,7 +67,8 @@ UIManager::UIManager(unsigned int shader_program)
         });
 
     _view_switch_buttons[Calendar::ViewMode::Month] = std::make_unique<Button>(
-        vector3(0.65, 0, 0), vector3(0.25, 0.125, 0),
+        vector3(0, 0.75, 0), 
+        vector3(0.25, 0.125, 0),
         Color(0, 0, 0), Color(153, 50, 204),
         [this](Button *btn)
         {
@@ -80,10 +84,11 @@ UIManager::~UIManager() = default;
 void UIManager::draw_calendar() const
 {
     // Арбайт
-    for (const auto &[mode, btn_ptr] : _view_switch_buttons)
-    {
-        btn_ptr->Draw(_shader_program);
-    }
+    // for (const auto &[mode, btn_ptr] : _view_switch_buttons)
+    // {
+    //     btn_ptr->Draw(_shader_program);
+    // }
+    // В процессе
     /*switch (_calendar.get_view_mode())
     {
     case Calendar::ViewMode::Month:
@@ -99,10 +104,15 @@ void UIManager::draw_calendar() const
         std::__throw_runtime_error("Unexpected calendar ViewMode");
     }*/
 }
+void UIManager::draw_calendar_day_mode() const{
+
+}
 void UIManager::check_buttons_bover(double mouseX, double mouseY, int windowWidth, int windowHeight) const
 {
     for (const auto &[mode, btn_ptr] : _view_switch_buttons)
     {
         btn_ptr->CheckHover(mouseX, mouseY, windowWidth, windowHeight);
     }
+    std::vector<Task*> tasklist = _calendar.get_tasks_for_day(std::chrono::system_clock::time_point());
+
 }

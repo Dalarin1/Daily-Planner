@@ -23,6 +23,13 @@ void processInput(GLFWwindow *window)
 	}
 }
 
+void mouse_click_callback(GLFWwindow *window, int button, int action, int mods){
+	if(current_hovered_object == nullptr){
+		return;
+	}
+	current_hovered_object->OnClick(current_hovered_object);
+}
+
 void button_callback(Button *btn)
 {
 	btn->current_bkg_color = btn->base_bkg_color.Lerp(Color(255, 0, 200), 60.0f);
@@ -46,7 +53,7 @@ int main()
 		return -1;
 	}
 	glfwMakeContextCurrent(window);
-
+	glfwSetMouseButtonCallback(window, mouse_click_callback);
 	gladLoadGL();
 
 	unsigned int shaderProgram = create_shader_program("shaders/shader.vert", "shaders/shader.frag");

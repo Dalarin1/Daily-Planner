@@ -7,4 +7,5 @@ call  g++.exe ^
     -L lib ^
     src/main.cpp src/glad.c ^
     -lglfw3dll ^
+    -lfreetype ^
     -o out/main.exe

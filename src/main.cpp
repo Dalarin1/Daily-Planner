@@ -23,7 +23,6 @@ void processInput(GLFWwindow *window)
 	}
 }
 
-
 void button_callback(Button *btn)
 {
 	btn->current_bkg_color = btn->base_bkg_color.Lerp(Color(255, 0, 200), 60.0f);
@@ -47,10 +46,13 @@ int main()
 		return -1;
 	}
 	glfwMakeContextCurrent(window);
-	
+
 	gladLoadGL();
 
 	unsigned int shaderProgram = create_shader_program("shaders/shader.vert", "shaders/shader.frag");
+
+	TextRenderer textRenderer = TextRenderer("include/Roboto-VariableFont_wdth,wght.ttf", 18);
+
 	UIManager ui = UIManager(shaderProgram);
 	glViewport(0, 0, 800, 800);
 	double x, y;
@@ -65,6 +67,7 @@ int main()
 		glfwGetCursorPos(window, &x, &y);
 		glUseProgram(shaderProgram);
 		ui.draw_calendar();
+		textRenderer.render_text("Suck some cock", 0.5, 0.6, 1.0, Color(0, 0, 0));
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 	}

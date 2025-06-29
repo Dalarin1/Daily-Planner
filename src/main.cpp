@@ -23,12 +23,6 @@ void processInput(GLFWwindow *window)
 	}
 }
 
-void mouse_click_callback(GLFWwindow *window, int button, int action, int mods){
-	if(current_hovered_object == nullptr){
-		return;
-	}
-	current_hovered_object->OnClick(current_hovered_object);
-}
 
 void button_callback(Button *btn)
 {
@@ -53,7 +47,7 @@ int main()
 		return -1;
 	}
 	glfwMakeContextCurrent(window);
-	glfwSetMouseButtonCallback(window, mouse_click_callback);
+	
 	gladLoadGL();
 
 	unsigned int shaderProgram = create_shader_program("shaders/shader.vert", "shaders/shader.frag");
@@ -69,7 +63,6 @@ int main()
 		glClearColor(0.17f, 0.57f, 0.24f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 		glfwGetCursorPos(window, &x, &y);
-		ui.check_buttons_bover(x,y,800,800);
 		glUseProgram(shaderProgram);
 		ui.draw_calendar();
 		glfwSwapBuffers(window);

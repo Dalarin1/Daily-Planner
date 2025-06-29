@@ -3,8 +3,20 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <functional>
+#include <ft2build.h>
+#include FT_FREETYPE_H
 
-class Button
+class IUIElement
+{
+public:
+    virtual ~IUIElement() = default;
+    virtual void draw(unsigned int shader_program) const = 0;
+    virtual void update(double mouseX, double mouseY, int windowWidth, int windowHeight) = 0;
+    virtual void handle_click() = 0;
+    virtual bool contains_point(double x, double y, int windowWidth, int windowHeight) const = 0;
+};
+
+class Button : public IUIElement
 {
 public:
     Color base_bkg_color;
@@ -13,8 +25,8 @@ public:
     Color current_border_color;
 
     Rectangle Bounds;
-    std::function<void(Button *)> OnClick;
-    std::function<void(Button *)> OnHover;
+    std::function<void()> OnClick;
+    std::function<void()> OnHover;
 
     bool is_hovered = false;
 
@@ -27,8 +39,8 @@ public:
            vector3 _size = vector3(0, 0, 0),
            Color _backgroundColor = Color(255, 255, 255),
            Color _borderColor = Color(0, 0, 0),
-           std::function<void(Button *)> _onClick = nullptr,
-           std::function<void(Button *)> _onHover = nullptr)
+           std::function<void()> _onClick = nullptr,
+           std::function<void()> _onHover = nullptr)
     {
         base_bkg_color = _backgroundColor;
         base_border_color = _borderColor;
@@ -44,9 +56,10 @@ public:
         glGenBuffers(1, &vbo);
         inited = true;
 
-        UpdateGeometry();
+        update_geometry();
     }
-    void UpdateGeometry()
+
+    void update_geometry()
     {
         for (int i = 0; i < 4; i++)
         {
@@ -63,31 +76,35 @@ public:
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         glBindVertexArray(0);
     }
-    void CheckHover(double mouseX, double mouseY, int windowWidth, int windowHeight)
+    void handle_click()
     {
-        bool newHoverState = IsHovered(mouseX, mouseY, windowWidth, windowHeight);
+        if (OnClick)
+            OnClick();
+    }
+    void update(double mouseX, double mouseY, int windowWidth, int windowHeight) override
+    {
+        bool newHoverState = contains_point(mouseX, mouseY, windowWidth, windowHeight);
 
         if (newHoverState && !is_hovered)
         {
-            // Только при наведении
             if (OnHover)
-                OnHover(this);
+                OnHover();
             is_hovered = true;
         }
         else if (!newHoverState && is_hovered)
         {
-            // Только при снятии наведения
-            ResetColors();
+            reset_colors();
             is_hovered = false;
         }
     }
-    bool IsHovered(double mouseX, double mouseY, int windowWidth, int windowHeight)
+
+    bool contains_point(double mouseX, double mouseY, int windowWidth, int windowHeight) const override
     {
         float xabs = 2 * (mouseX / windowWidth) - 1;
         float yabs = 1 - 2 * (mouseY / windowHeight);
         return Bounds.Contains(vector3(xabs, yabs, 0));
     }
-    void Draw(unsigned int shaderProgram) const
+    void draw(unsigned int shaderProgram) const override
     {
         GLint colorloc = glGetUniformLocation(shaderProgram, "color");
         glUniform4f(colorloc,
@@ -107,9 +124,8 @@ public:
         glDrawArrays(GL_LINE_LOOP, 0, 4);
         glBindVertexArray(0);
     }
-    void ResetColors()
+    void reset_colors()
     {
-        std::cout << "RESET COLOR\n";
         current_bkg_color = base_bkg_color;
         current_border_color = base_border_color;
     }
@@ -122,59 +138,132 @@ public:
         }
     }
 };
-
-class Checkbox
+class Checkbox : public IUIElement
 {
 public:
-    bool Checked;
-    Button BoxButton;
-    Color CheckedColor;
-    Color UncheckedColor;
+    bool checked;
+    Button button;
+    Color checkedColor;
+    Color uncheckedColor;
+    std::function<void(bool)> OnChange;
 
-    Checkbox(vector3 pos = vector3(0,0,0),
+    Checkbox(vector3 pos = vector3(0, 0, 0),
              vector3 size = vector3(0.05, 0.05, 0),
              Color uncheckedColor = Color(),
              Color checkedColor = Color(0, 255, 0),
-             std::function<void(Checkbox *)> onClick = nullptr)
-        : Checked(false),
-          BoxButton(pos, size, uncheckedColor, Color(0, 0, 0)),
-          CheckedColor(checkedColor),
-          UncheckedColor(uncheckedColor)
+             std::function<void(bool)> _onChange = nullptr)
+        : checked(false),
+          button(pos, size, uncheckedColor, Color(0, 0, 0)),
+          checkedColor(checkedColor),
+          uncheckedColor(uncheckedColor),
+          OnChange(_onChange)
     {
-        BoxButton.OnClick = [this, onClick](Button *btn)
+        button.OnClick = [this]
         {
-            Checked = !Checked;
-            UpdateAppearance();
-
-            if (onClick)
-            {
-                onClick(this);
-            }
-        };
-        BoxButton.OnHover = [this](Button *btn)
-        {
-            btn->current_bkg_color = btn->base_bkg_color.Lerp(
-                Checked ? CheckedColor : UncheckedColor,
-                25.0f);
+            checked = !checked;
+            update_appearance();
+            if (OnChange)
+                OnChange(checked);
         };
 
-        UpdateAppearance();
+        button.OnHover = [this]
+        {
+            // Логика наведения
+        };
+
+        update_appearance();
     }
 
-    void UpdateAppearance()
+    void update(double mouseX, double mouseY, int windowWidth, int windowHeight) override
     {
-        BoxButton.base_bkg_color = Checked ? CheckedColor : UncheckedColor;
-        BoxButton.current_bkg_color = BoxButton.base_bkg_color;
+        button.update(mouseX, mouseY, windowWidth, windowHeight);
     }
 
-    void Draw(unsigned int shaderProgram) const
+    void handle_click() override
     {
-        BoxButton.Draw(shaderProgram);
+        button.handle_click();
     }
 
-    void CheckHover(double mouseX, double mouseY, int windowWidth, int windowHeight)
+    bool contains_point(double mouseX, double mouseY, int windowWidth, int windowHeight) const override
     {
-        BoxButton.CheckHover(mouseX, mouseY, windowWidth, windowHeight);
+        return button.contains_point(mouseX, mouseY, windowWidth, windowHeight);
     }
 
+    void draw(unsigned int shaderProgram) const override
+    {
+        button.draw(shaderProgram);
+    }
+
+    void update_appearance()
+    {
+        button.base_bkg_color = checked ? checkedColor : uncheckedColor;
+        button.current_bkg_color = button.base_bkg_color;
+    }
+};
+class Textbox : public IUIElement
+{
+public:
+    unsigned int _texture_id;
+    const std::string &_text;
+    Color base_text_color;
+    Color current_text_color;
+    Color base_bkg_color;
+    Color current_bkg_color;
+    Color base_border_color;
+    Color current_border_color;
+    Rectangle _bounds;
+
+    GLuint vao;
+    GLuint vbo;
+    GLfloat bounds_points[12];
+
+    Textbox(const std::string &text = "Text",
+            vector3 pos = vector3(0, 0, 0),
+            vector3 size = vector3(0, 0, 0),
+            Color text_color = Color(0, 0, 0),
+            Color bkg_color = Color(),
+            Color border_color = Color(0, 0, 0))
+        : _text(text), _bounds(pos, size), base_text_color(text_color), base_bkg_color(bkg_color), base_border_color(border_color)
+    {
+        current_bkg_color = base_bkg_color;
+        current_border_color = base_border_color;
+        current_text_color = base_text_color;
+
+        glGenVertexArrays(1, &vao);
+        glGenBuffers(1, &vbo);
+        update_geometry();
+    }
+    void draw(unsigned int shader_program) const
+    {
+    }
+    void update_geometry()
+    {
+        for (int i = 0; i < 4; i++)
+        {
+            bounds_points[3 * i] = _bounds.Points[i].X;
+            bounds_points[3 * i + 1] = _bounds.Points[i].Y;
+            bounds_points[3 * i + 2] = _bounds.Points[i].Z;
+        }
+
+        glBindVertexArray(vao);
+        glBindBuffer(GL_ARRAY_BUFFER, vbo);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(bounds_points), bounds_points, GL_DYNAMIC_DRAW);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *)0);
+        glEnableVertexAttribArray(0);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glBindVertexArray(0);
+    }
+    void update(double mouseX, double mouseY, int windowWidth, int windowHeight) = 0;
+    void handle_click() = 0;
+    bool contains_point(double x, double y, int windowWidth, int windowHeight)
+    {
+        return clamp(x, 0.0, (double)windowWidth) == x &&
+               clamp(y, 0.0, (double)(windowHeight)) == y &&
+               _bounds.Contains(vector3(x, y, 0));
+    }
+};
+
+class TextRender
+{
+    GLuint _texture_id;
 };

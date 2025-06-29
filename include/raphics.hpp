@@ -265,5 +265,19 @@ public:
 
 class TextRender
 {
+public:
+    struct Character
+    {
+        GLuint TextureID; // ID текстуры глифа
+        vector3 Size;     // Размер глифа
+        vector3 Bearing;  // Смещение от базовой линии
+        FT_Pos Advance;   // Горизонтальное смещение до следующего глифа
+    };
     GLuint _texture_id;
+    GLuint vao;
+    GLuint vbo;
+
+    static void Init()
+    {
+    }
 };

@@ -50,7 +50,7 @@ int main()
 	gladLoadGL();
 
 	unsigned int shaderProgram = create_shader_program("shaders/shader.vert", "shaders/shader.frag");
-
+	
 	TextRenderer textRenderer = TextRenderer("include/Roboto-VariableFont_wdth,wght.ttf", 18);
 
 	UIManager ui = UIManager(shaderProgram);

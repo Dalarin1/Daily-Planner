@@ -88,10 +88,10 @@ UIManager::~UIManager() = default;
 void UIManager::draw_calendar() const
 {
     // Арбайт
-    // for (const auto &[mode, btn_ptr] : _view_switch_buttons)
-    // {
-    //     btn_ptr->draw(_shader_program);
-    // }
+    for (const auto &[mode, btn_ptr] : _view_switch_buttons)
+    {
+        btn_ptr->draw(_shader_program);
+    }
     // В процессе
     /*switch (_calendar.get_view_mode())
     {

@@ -1,9 +1,8 @@
 #pragma once
 #include <iostream>
 #include <fstream>
-#include <GLFW/glfw3.h>
 #include <glad/glad.h>
-
+#include <GLFW/glfw3.h>
 std::string read_file(const char *path)
 {
     std::ifstream file(path);
@@ -109,8 +108,7 @@ void add_shades_to_program(const unsigned int &shader_program, const char *vert_
 Только один шейдер каждого другого типа (геометрический, тесселяции и т.д.)
 */
 // TODO
-// Сделать add_shader гибче; добавить возможность добавлять шейдеры любого типа, и по одному.
-// например, void add_shader(GLenum shader_type, const char* shader_path);
+// Реализовать mat4
 class ShaderProgram
 {
 public:
@@ -125,7 +123,8 @@ public:
 
     void add_shader(GLenum shader_type, const char* shader_path){
         unsigned int shader = glCreateShader(shader_type);
-        const char* shader_data = read_file(shader_path).c_str();
+        std::string _ = read_file(shader_path);
+        const char* shader_data = _.c_str();
 
         glShaderSource(shader, 1, &shader_data, NULL);
         glCompileShader(shader);
@@ -148,8 +147,9 @@ public:
         glUniform1f(glGetUniformLocation(program, name.c_str()), value);
     }
     
-    void setMat4(const std::string& name, const glm::mat4& mat) const {
-        glUniformMatrix4fv(glGetUniformLocation(program, name.c_str()), 1, GL_FALSE, &mat[0][0]);
+    
+    void setMat4(const std::string& name, const mat4& mat) const {
+        glUniformMatrix4fv(glGetUniformLocation(program, name.c_str()), 1, GL_FALSE, mat.m);
     }
 
     ~ShaderProgram() { glDeleteProgram(program); }

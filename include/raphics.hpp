@@ -1,8 +1,7 @@
 #pragma once
 #include "Primitives.hpp"
+#include "ShaderLoader.hpp"
 #include <map>
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
 #include <functional>
 #include <ft2build.h>
 #include FT_FREETYPE_H
@@ -276,9 +275,11 @@ public:
 
     std::map<char, Character> Characters;
     GLuint VAO, VBO;
+    ShaderProgram* Program = nullptr;
     // Shader textShader;
 
-    TextRenderer(const std::string& fontPath, unsigned int fontSize) {
+    TextRenderer(ShaderProgram* program,  const std::string& fontPath, unsigned int fontSize) {
+        this->Program = program;
         this->Characters = {};
         // Инициализация FreeType
         FT_Library ft;
@@ -357,6 +358,9 @@ public:
         // textShader.Use();
         // textShader.SetMatrix4("projection", glm::ortho(0.0f, 800.0f, 0.0f, 600.0f));
         // textShader.SetInt("text", 0);
+        Program->use();
+        Program->setMat4("projection", mat4::ortho(0.0f, 800.0f, 0.0f, 800.0f, -1.0f, 1.0f).m);
+        Program->setInt("text", 0);
     }
 
     void render_text(const std::string& text, float x, float y, float scale, const Color& color) {

@@ -11,8 +11,6 @@ Learning Path: Local storage, calendar UI, and reminder notifications.
 Open-source Focus: Contributors can add recurring tasks, theme customization, and more notification options.
 */
 #include <iostream>
-#include "raphics.hpp"
-#include "ShaderLoader.hpp"
 #include "UIManager.hpp"
 
 void processInput(GLFWwindow *window)
@@ -49,11 +47,23 @@ int main()
 
 	gladLoadGL();
 
-	unsigned int shaderProgram = create_shader_program("shaders/shader.vert", "shaders/shader.frag");
+	// unsigned int shaderProgram = create_shader_program("shaders/shader.vert", "shaders/shader.frag");
 	
-	TextRenderer textRenderer = TextRenderer("include/Roboto-VariableFont_wdth,wght.ttf", 18);
 
-	UIManager ui = UIManager(shaderProgram);
+	ShaderProgram ui_shader_program = ShaderProgram();
+	ui_shader_program.add_shader(GL_VERTEX_SHADER, "shaders/shader.vert");
+	ui_shader_program.add_shader(GL_FRAGMENT_SHADER, "shaders/shader.frag");
+	ui_shader_program.link();
+
+
+	ShaderProgram text_shader_program = ShaderProgram();
+	text_shader_program.add_shader(GL_VERTEX_SHADER, "shaders/text.vert");
+	text_shader_program.add_shader(GL_FRAGMENT_SHADER, "shaders/text.frag");
+	text_shader_program.link();
+
+	UIManager ui = UIManager(ui_shader_program.program);
+	TextRenderer textRenderer = TextRenderer(&text_shader_program,"include/Roboto-VariableFont_wdth,wght.ttf", 18u);
+
 	glViewport(0, 0, 800, 800);
 	double x, y;
 
@@ -65,9 +75,13 @@ int main()
 		glClearColor(0.17f, 0.57f, 0.24f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 		glfwGetCursorPos(window, &x, &y);
-		glUseProgram(shaderProgram);
+		
+		ui_shader_program.use();
 		ui.draw_calendar();
+
+		text_shader_program.use();
 		textRenderer.render_text("Suck some cock", 0.5, 0.6, 1.0, Color(0, 0, 0));
+		
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 	}

@@ -107,8 +107,6 @@ void add_shades_to_program(const unsigned int &shader_program, const char *vert_
 Только один фрагментный шейдер
 Только один шейдер каждого другого типа (геометрический, тесселяции и т.д.)
 */
-// TODO
-// Реализовать mat4
 class ShaderProgram
 {
 public:
@@ -146,7 +144,12 @@ public:
     void setFloat(const std::string& name, float value) const {
         glUniform1f(glGetUniformLocation(program, name.c_str()), value);
     }
-    
+    void setVector3(const std::string& name, vector3 value) const {
+        glUniform3f(glGetUniformLocation(program, name.c_str()), value.X, value.Y, value.Z);
+    }
+    void setVector4(const std::string& name, vector4 value) const{
+        glUniform4f(glGetUniformLocation(program, name.c_str()), value.X, value.Y, value.Z, value.W);
+    }
     
     void setMat4(const std::string& name, const mat4& mat) const {
         glUniformMatrix4fv(glGetUniformLocation(program, name.c_str()), 1, GL_FALSE, mat.m);

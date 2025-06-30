@@ -47,9 +47,6 @@ int main()
 
 	gladLoadGL();
 
-	// unsigned int shaderProgram = create_shader_program("shaders/shader.vert", "shaders/shader.frag");
-	
-
 	ShaderProgram ui_shader_program = ShaderProgram();
 	ui_shader_program.add_shader(GL_VERTEX_SHADER, "shaders/shader.vert");
 	ui_shader_program.add_shader(GL_FRAGMENT_SHADER, "shaders/shader.frag");
@@ -62,11 +59,11 @@ int main()
 	text_shader_program.link();
 
 	UIManager ui = UIManager(ui_shader_program.program);
-	TextRenderer textRenderer = TextRenderer(&text_shader_program,"include/Roboto-VariableFont_wdth,wght.ttf", 18u);
+	TextRenderer textRenderer = TextRenderer(&text_shader_program,"include/arial.ttf",32u);
 
 	glViewport(0, 0, 800, 800);
 	double x, y;
-
+	float t = 0;
 	while (!glfwWindowShouldClose(window))
 	{
 		processInput(window);
@@ -80,8 +77,7 @@ int main()
 		ui.draw_calendar();
 
 		text_shader_program.use();
-		textRenderer.render_text("Suck some cock", 0.5, 0.6, 1.0, Color(0, 0, 0));
-		
+		textRenderer.render_text("Daily Planner", 50.0f, 50.0f, 1.0f, Color(100, 255, 100));
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 	}

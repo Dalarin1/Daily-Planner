@@ -203,7 +203,6 @@ public:
 class Textbox : public IUIElement
 {
 public:
-    unsigned int _texture_id;
     const std::string &_text;
     Color base_text_color;
     Color current_text_color;
@@ -233,8 +232,9 @@ public:
         glGenBuffers(1, &vbo);
         update_geometry();
     }
-    void draw(unsigned int shader_program) const
+    void draw(unsigned int shader_program, TextRenderer* renderer) const
     {
+        renderer->render_text(_text, _bounds.Location.X, _bounds.Location.Y, 1.0f, current_text_color);
     }
     void update_geometry()
     {
@@ -263,22 +263,24 @@ public:
     }
 };
 
-
-class TextRenderer {
+class TextRenderer
+{
 public:
-    struct Character {
-        GLuint  TextureID;  // ID текстуры глифа
-        vector2 Size;       // Размер глифа
-        vector2 Bearing;    // Смещение от базовой линии
-        FT_Pos  Advance;    // Горизонтальное смещение до следующего глифа
+    struct Character
+    {
+        GLuint TextureID; // ID текстуры глифа
+        vector2 Size;     // Размер глифа
+        vector2 Bearing;  // Смещение от базовой линии
+        FT_Pos Advance;   // Горизонтальное смещение до следующего глифа
     };
 
     std::map<char, Character> Characters;
     GLuint VAO, VBO;
-    ShaderProgram* Program = nullptr;
+    ShaderProgram *Program = nullptr;
     // Shader textShader;
 
-    TextRenderer(ShaderProgram* program,  const std::string& fontPath, unsigned int fontSize) {
+    TextRenderer(ShaderProgram *program, const std::string &fontPath, unsigned int fontSize)
+    {
         this->Program = program;
         this->Characters = {};
         // Инициализация FreeType
@@ -295,12 +297,14 @@ public:
         FT_Set_Pixel_Sizes(face, 0, fontSize);
 
         // Отключаем выравнивание байтов
-        glPixelStorei(GL_UNPACK_ALIGNMENT, 1); 
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
         // Загрузка первых 128 символов ASCII
-        for (unsigned char c = 0; c < 128; c++) {
+        for (unsigned char c = 0; c < 128; c++)
+        {
             // Загрузка глифа
-            if (FT_Load_Char(face, c, FT_LOAD_RENDER)) {
+            if (FT_Load_Char(face, c, FT_LOAD_RENDER))
+            {
                 std::cerr << "ERROR::FREETYTPE: Failed to load Glyph" << std::endl;
                 continue;
             }
@@ -318,8 +322,7 @@ public:
                 0,
                 GL_RED,
                 GL_UNSIGNED_BYTE,
-                face->glyph->bitmap.buffer
-            );
+                face->glyph->bitmap.buffer);
 
             // Установка параметров текстуры
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -332,9 +335,8 @@ public:
                 texture,
                 vector2(face->glyph->bitmap.width, face->glyph->bitmap.rows),
                 vector2(face->glyph->bitmap_left, face->glyph->bitmap_top),
-                static_cast<FT_Pos>(face->glyph->advance.x)
-            };
-            
+                static_cast<FT_Pos>(face->glyph->advance.x)};
+
             this->Characters.insert(std::pair<char, Character>(c, character));
         }
 
@@ -353,25 +355,24 @@ public:
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         glBindVertexArray(0);
 
-        // Компиляция шейдера для текста
-        // textShader.Compile("shaders/text.vs", "shaders/text.fs");
-        // textShader.Use();
-        // textShader.SetMatrix4("projection", glm::ortho(0.0f, 800.0f, 0.0f, 600.0f));
-        // textShader.SetInt("text", 0);
         Program->use();
         Program->setMat4("projection", mat4::ortho(0.0f, 800.0f, 0.0f, 800.0f, -1.0f, 1.0f).m);
         Program->setInt("text", 0);
     }
 
-    void render_text(const std::string& text, float x, float y, float scale, const Color& color) {
-        // Активация состояния рендеринга
-        // textShader.Use();
-        // textShader.SetVector3f("textColor", color.Red / 255.0f, color.Green / 255.0f, color.Blue / 255.0f);
+    void render_text(const std::string &text, float x, float y, float scale, const Color &color)
+    {
+
+        Program->use();
+        Program->setVector3("textColor", (const_cast<Color &>(color)).to_vector3() / 255.0f);
+        
         glActiveTexture(GL_TEXTURE0);
         glBindVertexArray(VAO);
-
-        // Итерация по всем символам строки
-        for (auto c = text.begin(); c != text.end(); c++) {
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        
+        for (auto c = text.begin(); c != text.end(); c++)
+        {
             Character ch = Characters[*c];
 
             float xpos = x + ch.Bearing.X * scale;
@@ -382,30 +383,29 @@ public:
 
             // Вершины для каждого символа (2 треугольника)
             float vertices[6][4] = {
-                { xpos,     ypos + h,   0.0f, 0.0f },            
-                { xpos,     ypos,       0.0f, 1.0f },
-                { xpos + w, ypos,       1.0f, 1.0f },
+                {xpos, ypos + h, 0.0f, 0.0f},
+                {xpos, ypos, 0.0f, 1.0f},
+                {xpos + w, ypos, 1.0f, 1.0f},
 
-                { xpos,     ypos + h,   0.0f, 0.0f },
-                { xpos + w, ypos,       1.0f, 1.0f },
-                { xpos + w, ypos + h,   1.0f, 0.0f }           
-            };
+                {xpos, ypos + h, 0.0f, 0.0f},
+                {xpos + w, ypos, 1.0f, 1.0f},
+                {xpos + w, ypos + h, 1.0f, 0.0f}};
 
             // Рендеринг текстуры глифа на прямоугольнике
             glBindTexture(GL_TEXTURE_2D, ch.TextureID);
-            
+
             // Обновление содержимого VBO
             glBindBuffer(GL_ARRAY_BUFFER, VBO);
             glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
             glBindBuffer(GL_ARRAY_BUFFER, 0);
-            
+
             // Отрисовка прямоугольника
             glDrawArrays(GL_TRIANGLES, 0, 6);
-            
+
             // Смещение для следующего глифа
             x += (ch.Advance >> 6) * scale;
         }
-        
+
         glBindVertexArray(0);
         glBindTexture(GL_TEXTURE_2D, 0);
     }

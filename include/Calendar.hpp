@@ -76,7 +76,6 @@ std::vector<Task *> Calendar::get_tasks_for_day(const date::year_month_day &day)
     for (const auto &[id, task] : _tasks)
     {
         if (task.get_due_date() == day &&
-            task.get_status() != Task::Status::Done &&
             (_active_category_filter.empty() || task.get_category() == _active_category_filter))
         {
             out.push_back(&const_cast<Task &>(task));
@@ -109,7 +108,6 @@ std::vector<Task *> Calendar::get_tasks_for_month(const date::year_month_day &mo
     {
         auto task_due_sys = date::sys_days(task.get_due_date());
         if (task_due_sys >= start_sys && task_due_sys < end_sys &&
-            task.get_status() != Task::Status::Done &&
             (_active_category_filter.empty() || task.get_category() == _active_category_filter))
         {
             out.push_back(&const_cast<Task &>(task));

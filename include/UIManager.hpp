@@ -19,7 +19,7 @@ public:
 
     ~UIManager();
 
-// private:
+    // private:
     ShaderProgram *ui_render_program;
     ShaderProgram *text_render_program;
     TextRenderer *_text_renderer;
@@ -88,12 +88,12 @@ UIManager::~UIManager() = default;
 
 void UIManager::draw_calendar() const
 {
-    ui_render_program->use();
-    // Арбайт
-    for (const auto &[mode, btn_ptr] : _view_switch_buttons)
-    {
-        btn_ptr->draw(ui_render_program->program);
-    }
+    // ui_render_program->use();
+    // // Арбайт
+    // for (const auto &[mode, btn_ptr] : _view_switch_buttons)
+    // {
+    //     btn_ptr->draw(ui_render_program->program);
+    // }
     // В процессе
     switch (_calendar.get_view_mode())
     {
@@ -114,14 +114,21 @@ void UIManager::draw_calendar_day_mode() const
 {
     // Текстовые координаты
     const float startPosX = 200.0f, startPosY = 560.0f;
+    std::vector<Task *> tasks = _calendar.get_tasks_for_month(_calendar.get_current_date());
+    std::vector<Checkbox* > checkboxes = {};
+    ui_render_program->use();
 
-    std::vector<Task* > tasks = _calendar.get_tasks_for_month(_calendar.get_current_date());
-
-    text_render_program->use();
-    for(int i = 0; i < tasks.size(); i++){
-        _text_renderer->render_text(tasks[i]->get_title(), startPosX, startPosY - (i * 32), 1.0f, Color(0,0,0));
+    for (int i = 0; i < tasks.size(); i++)
+    {
+        checkboxes.push_back(new Checkbox(vector3(-0.5, 0.5 - i * 0.25, 0), vector3(0.15, 0.15, 0)));
+        checkboxes[i]->draw(ui_render_program->program);
     }
 
+    text_render_program->use();
+    for (int i = 0; i < tasks.size(); i++)
+    {
+        _text_renderer->render_text(tasks[i]->get_title(), startPosX, startPosY - (i * 32), 1.0f, Color(0, 0, 0));
+    }
 }
 void UIManager::draw_calendar_week_mode() const
 {

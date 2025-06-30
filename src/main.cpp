@@ -52,18 +52,23 @@ int main()
 	ui_shader_program.add_shader(GL_FRAGMENT_SHADER, "shaders/shader.frag");
 	ui_shader_program.link();
 
-
 	ShaderProgram text_shader_program = ShaderProgram();
 	text_shader_program.add_shader(GL_VERTEX_SHADER, "shaders/text.vert");
 	text_shader_program.add_shader(GL_FRAGMENT_SHADER, "shaders/text.frag");
 	text_shader_program.link();
 
-	UIManager ui = UIManager(ui_shader_program.program);
-	TextRenderer textRenderer = TextRenderer(&text_shader_program,"include/arial.ttf",32u);
+	TextRenderer textRenderer = TextRenderer(&text_shader_program, "include/arial.ttf", 32u);
+
+	UIManager ui = UIManager(&ui_shader_program, &text_shader_program, &textRenderer);
+	ui._calendar.add_task(Task("Next item", "decs", "", Task::Priority::Medium, std::chrono::floor<date::days>(std::chrono::system_clock::now())));
+	ui._calendar.add_task(Task());
+	ui._calendar.add_task(Task());
+	ui._calendar.set_view_mode(Calendar::ViewMode::Day);
+
 
 	glViewport(0, 0, 800, 800);
 	double x, y;
-	float t = 0;
+	
 	while (!glfwWindowShouldClose(window))
 	{
 		processInput(window);
@@ -72,12 +77,9 @@ int main()
 		glClearColor(0.17f, 0.57f, 0.24f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 		glfwGetCursorPos(window, &x, &y);
-		
-		ui_shader_program.use();
+
 		ui.draw_calendar();
 
-		text_shader_program.use();
-		textRenderer.render_text("Daily Planner", 50.0f, 50.0f, 1.0f, Color(100, 255, 100));
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 	}

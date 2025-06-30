@@ -6,7 +6,7 @@
 class UIManager
 {
 public:
-    UIManager(unsigned int shader_program);
+    UIManager(ShaderProgram *ui_program, ShaderProgram *text_program, TextRenderer *_text_renderer);
     void draw_calendar() const;
 
     void draw_calendar_month_mode() const;
@@ -19,15 +19,14 @@ public:
 
     ~UIManager();
 
-private:
+// private:
+    ShaderProgram *ui_render_program;
+    ShaderProgram *text_render_program;
+    TextRenderer *_text_renderer;
+
     Calendar _calendar;
     std::vector<IUIElement *> _elements;
     GLFWwindow *_window;
-    unsigned int _vbo;
-    unsigned int _vao;
-    unsigned int _font_texture;
-    unsigned int _shader_program;
-    unsigned int _icon_textures;
     Color background_color;
     Color border_color;
     Button *day_btn;
@@ -36,9 +35,11 @@ private:
     std::map<Calendar::ViewMode, Button *> _view_switch_buttons;
 };
 
-UIManager::UIManager(unsigned int shader_program)
+UIManager::UIManager(ShaderProgram *ui_program, ShaderProgram *text_program, TextRenderer *text_renderer)
 {
-    _shader_program = shader_program;
+    ui_render_program = ui_program;
+    text_render_program = text_program;
+    _text_renderer = text_renderer;
     _calendar = Calendar();
     _calendar.set_view_mode(Calendar::ViewMode::Month);
     _view_switch_buttons[Calendar::ViewMode::Day] = new Button(
@@ -81,19 +82,20 @@ UIManager::UIManager(unsigned int shader_program)
         {
             this->_view_switch_buttons[Calendar::ViewMode::Month]->current_bkg_color =
                 this->_view_switch_buttons[Calendar::ViewMode::Month]->base_bkg_color.Lerp(Color(220, 208, 255), 25.0f);
-                });
+        });
 }
 UIManager::~UIManager() = default;
 
 void UIManager::draw_calendar() const
 {
+    ui_render_program->use();
     // Арбайт
     for (const auto &[mode, btn_ptr] : _view_switch_buttons)
     {
-        btn_ptr->draw(_shader_program);
+        btn_ptr->draw(ui_render_program->program);
     }
     // В процессе
-    /*switch (_calendar.get_view_mode())
+    switch (_calendar.get_view_mode())
     {
     case Calendar::ViewMode::Month:
         draw_calendar_month_mode();
@@ -105,9 +107,38 @@ void UIManager::draw_calendar() const
         draw_calendar_day_mode();
         break;
     default:
-        std::__throw_runtime_error("Unexpected calendar ViewMode");
-    }*/
+        throw std::runtime_error("Unexpected calendar ViewMode");
+    }
 }
 void UIManager::draw_calendar_day_mode() const
 {
+    // Текстовые координаты
+    const float startPosX = 200.0f, startPosY = 560.0f;
+
+    std::vector<Task* > tasks = _calendar.get_tasks_for_month(_calendar.get_current_date());
+
+    text_render_program->use();
+    for(int i = 0; i < tasks.size(); i++){
+        _text_renderer->render_text(tasks[i]->get_title(), startPosX, startPosY - (i * 32), 1.0f, Color(0,0,0));
+    }
+
+}
+void UIManager::draw_calendar_week_mode() const
+{
+}
+void UIManager::draw_calendar_month_mode() const
+{
+
+    const float cellW = 50.0f, cellH = 50.0f;
+    const float startX = 0.0f, startY = 0.0f;
+    const char *days[] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
+
+    text_render_program->use();
+
+    for (int i = 0; i < 7; ++i)
+    {
+        _text_renderer->render_text(
+            days[i],
+            startX + (i * cellW), startY + 0.2f, 1.0f, Color(0, 0, 255));
+    }
 }

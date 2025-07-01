@@ -90,12 +90,12 @@ UIManager::~UIManager() = default;
 
 void UIManager::draw_calendar() const
 {
-    // ui_render_program->use();
-    // // Арбайт
-    // for (const auto &[mode, btn_ptr] : _view_switch_buttons)
-    // {
-    //     btn_ptr->draw(ui_render_program->program);
-    // }
+    ui_render_program->use();
+    // Арбайт
+    for (const auto &[mode, btn_ptr] : _view_switch_buttons)
+    {
+        btn_ptr->draw(ui_render_program->program);
+    }
     // В процессе
     switch (_calendar.get_view_mode())
     {
@@ -136,6 +136,7 @@ void UIManager::draw_calendar_week_mode() const
 }
 void UIManager::draw_calendar_month_mode() const
 {
+
     const float cellW = 50.0f, cellH = 50.0f;
     const float startX = 0.0f, startY = 0.0f;
     const char *days[] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
@@ -166,6 +167,23 @@ void UIManager::update_tasks()
                 {
                     task->set_status(task->get_status() == Task::Status::Undone ? Task::Status::Done : Task::Status::Pending);
                 });
+        }
+    }
+}
+void UIManager::update(double mouseX, double mouseY, int windowWidth, int windowHeight)
+{
+    for (int i = 0; i < _elements.size(); i++)
+    {
+        _elements[i]->update(mouseX, mouseY, windowWidth, windowHeight);
+    }
+}
+void UIManager::handle_click(double mouseX, double mouseY, int windowWidth, int windowHeight)
+{
+    for (int i = 0; i < _elements.size(); i++)
+    {
+        if (_elements[i]->contains_point(mouseX, mouseY, windowWidth, windowHeight))
+        {
+            _elements[i]->handle_click();
         }
     }
 }

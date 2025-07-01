@@ -29,6 +29,7 @@ public:
     date::year_month_day get_current_date() const;
     std::string get_active_filter() const;
 
+    std::vector<Task *> get_all_tasks() const;
     std::vector<Task *> get_tasks_for_day(const date::year_month_day &day) const;
     std::vector<Task *> get_tasks_for_week(const date::year_month_day &week_start) const;
     std::vector<Task *> get_tasks_for_month(const date::year_month_day &month_start) const;
@@ -70,6 +71,14 @@ void Calendar::go_to_today() { this->_current_date = std::chrono::floor<date::da
 date::year_month_day Calendar::get_current_date() const { return _current_date; } 
 std::string Calendar::get_active_filter() const { return this->_active_category_filter; }
 
+std::vector<Task *> Calendar::get_all_tasks() const {
+    std::vector<Task* > out = {};
+    for (const auto &[id, task] : _tasks)
+    {
+       out.push_back(&const_cast<Task &>(task));
+    }
+    return out;
+}
 std::vector<Task *> Calendar::get_tasks_for_day(const date::year_month_day &day) const
 {
     std::vector<Task *> out = {};

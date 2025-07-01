@@ -2,7 +2,6 @@
 #include "TextRender.hpp"
 #include <functional>
 
-
 class IUIElement
 {
 public:
@@ -58,6 +57,7 @@ public:
 
     void update_geometry()
     {
+        Bounds.Update();
         for (int i = 0; i < 4; i++)
         {
             points[3 * i] = Bounds.Points[i].X;
@@ -188,6 +188,12 @@ public:
 
     void draw(unsigned int shaderProgram) const override
     {
+        button.draw(shaderProgram);
+    }
+    void draw_at(unsigned int shaderProgram, vector3 pos)
+    {
+        button.Bounds.Location = pos;
+        button.update_geometry();
         button.draw(shaderProgram);
     }
 

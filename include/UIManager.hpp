@@ -3,6 +3,8 @@
 #include "Calendar.hpp"
 #include "raphics.hpp"
 
+
+
 class UIManager
 {
 public:
@@ -12,14 +14,14 @@ public:
     void draw_calendar_month_mode() const;
     void draw_calendar_week_mode() const;
     void draw_calendar_day_mode() const;
-
+    
+    void update_tasks();
     void update(double mouseX, double mouseY, int windowWidth, int windowHeight);
     void handle_click(double mouseX, double mouseY, int windowWidth, int windowHeight);
     void draw_all(unsigned int shader_program) const;
 
     ~UIManager();
 
-    // private:
     ShaderProgram *ui_render_program;
     ShaderProgram *text_render_program;
     TextRenderer *_text_renderer;
@@ -32,6 +34,7 @@ public:
     Button *day_btn;
     Button *week_btn;
     Button *month_btn;
+    std::map<int, Checkbox* >_task_checkboxes;
     std::map<Calendar::ViewMode, Button *> _view_switch_buttons;
 };
 
@@ -83,6 +86,7 @@ UIManager::UIManager(ShaderProgram *ui_program, ShaderProgram *text_program, Tex
             this->_view_switch_buttons[Calendar::ViewMode::Month]->current_bkg_color =
                 this->_view_switch_buttons[Calendar::ViewMode::Month]->base_bkg_color.Lerp(Color(220, 208, 255), 25.0f);
         });
+    _task_checkboxes = {};
 }
 UIManager::~UIManager() = default;
 
@@ -114,14 +118,13 @@ void UIManager::draw_calendar_day_mode() const
 {
     // Текстовые координаты
     const float startPosX = 200.0f, startPosY = 560.0f;
+
     std::vector<Task *> tasks = _calendar.get_tasks_for_month(_calendar.get_current_date());
-    std::vector<Checkbox* > checkboxes = {};
     ui_render_program->use();
 
     for (int i = 0; i < tasks.size(); i++)
     {
-        checkboxes.push_back(new Checkbox(vector3(-0.5, 0.5 - i * 0.25, 0), vector3(0.15, 0.15, 0)));
-        checkboxes[i]->draw(ui_render_program->program);
+        _task_checkboxes.at(tasks[i]->get_id())->draw_at(ui_render_program->program, vector3(-0.5f, 0.6f - 0.1 * i, 0));
     }
 
     text_render_program->use();
@@ -135,7 +138,6 @@ void UIManager::draw_calendar_week_mode() const
 }
 void UIManager::draw_calendar_month_mode() const
 {
-
     const float cellW = 50.0f, cellH = 50.0f;
     const float startX = 0.0f, startY = 0.0f;
     const char *days[] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
@@ -147,5 +149,22 @@ void UIManager::draw_calendar_month_mode() const
         _text_renderer->render_text(
             days[i],
             startX + (i * cellW), startY + 0.2f, 1.0f, Color(0, 0, 255));
+    }
+}
+
+void UIManager::update_tasks(){
+    auto tasks = _calendar.get_all_tasks();
+    for(auto task : tasks){
+        if (_task_checkboxes.find(task->get_id()) == _task_checkboxes.end()){
+            _task_checkboxes[task->get_id()] = new Checkbox(
+                vector3(),
+                vector3(0.05f, 0.05f, 0),
+                Color(),
+                Color(0,0,0),
+                [this, task](bool checked){
+                    task->set_status(task->get_status() == Task::Status::Undone? Task::Status::Done : Task::Status::Pending);
+                }
+            );
+        }
     }
 }

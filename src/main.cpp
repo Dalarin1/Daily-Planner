@@ -63,8 +63,10 @@ int main()
 	ui._calendar.add_task(Task("Next item", "decs", "", Task::Priority::Medium, std::chrono::floor<date::days>(std::chrono::system_clock::now())));
 	ui._calendar.add_task(Task());
 	ui._calendar.add_task(Task());
+	ui._calendar.add_task(Task());
+	ui._calendar.add_task(Task());
 	ui._calendar.set_view_mode(Calendar::ViewMode::Day);
-
+	ui.update_tasks();
 
 	glViewport(0, 0, 800, 800);
 	double x, y;

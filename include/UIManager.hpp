@@ -3,8 +3,6 @@
 #include "Calendar.hpp"
 #include "raphics.hpp"
 
-
-
 class UIManager
 {
 public:
@@ -14,7 +12,7 @@ public:
     void draw_calendar_month_mode() const;
     void draw_calendar_week_mode() const;
     void draw_calendar_day_mode() const;
-    
+
     void update_tasks();
     void update(double mouseX, double mouseY, int windowWidth, int windowHeight);
     void handle_click(double mouseX, double mouseY, int windowWidth, int windowHeight);
@@ -34,7 +32,7 @@ public:
     Button *day_btn;
     Button *week_btn;
     Button *month_btn;
-    std::map<int, Checkbox* >_task_checkboxes;
+    std::map<int, Checkbox *> _task_checkboxes;
     std::map<Calendar::ViewMode, Button *> _view_switch_buttons;
 };
 
@@ -130,7 +128,7 @@ void UIManager::draw_calendar_day_mode() const
     text_render_program->use();
     for (int i = 0; i < tasks.size(); i++)
     {
-        _text_renderer->render_text(tasks[i]->get_title(), startPosX, startPosY - (i * 32), 1.0f, Color(0, 0, 0));
+        _text_renderer->render_text_GL_coords(tasks[i]->get_title(), -0.5 + 0.05, 0.55f - 0.1 * i, 1.0f, Color(0, 0, 0), 800, 800);
     }
 }
 void UIManager::draw_calendar_week_mode() const
@@ -152,19 +150,22 @@ void UIManager::draw_calendar_month_mode() const
     }
 }
 
-void UIManager::update_tasks(){
+void UIManager::update_tasks()
+{
     auto tasks = _calendar.get_all_tasks();
-    for(auto task : tasks){
-        if (_task_checkboxes.find(task->get_id()) == _task_checkboxes.end()){
+    for (auto task : tasks)
+    {
+        if (_task_checkboxes.find(task->get_id()) == _task_checkboxes.end())
+        {
             _task_checkboxes[task->get_id()] = new Checkbox(
                 vector3(),
                 vector3(0.05f, 0.05f, 0),
                 Color(),
-                Color(0,0,0),
-                [this, task](bool checked){
-                    task->set_status(task->get_status() == Task::Status::Undone? Task::Status::Done : Task::Status::Pending);
-                }
-            );
+                Color(0, 0, 0),
+                [this, task](bool checked)
+                {
+                    task->set_status(task->get_status() == Task::Status::Undone ? Task::Status::Done : Task::Status::Pending);
+                });
         }
     }
 }

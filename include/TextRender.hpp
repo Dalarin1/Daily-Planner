@@ -19,7 +19,6 @@ public:
     std::map<char, Character> Characters;
     GLuint VAO, VBO;
     ShaderProgram *Program = nullptr;
-    // Shader textShader;
 
     TextRenderer(ShaderProgram *program, const std::string &fontPath, unsigned int fontSize)
     {
@@ -100,6 +99,15 @@ public:
         Program->use();
         Program->setMat4("projection", mat4::ortho(0.0f, 800.0f, 0.0f, 800.0f, -1.0f, 1.0f).m);
         Program->setInt("text", 0);
+    }
+
+    inline void render_text_GL_coords(const std::string &text, float x, float y, float scale, const Color &color, int window_width, int window_height)
+    {
+        this->render_text(text,
+                          window_width * (x + 1) / 2, 
+                          window_height * (y + 1) / 2,
+                          scale,
+                          color);
     }
 
     void render_text(const std::string &text, float x, float y, float scale, const Color &color)

@@ -32,8 +32,11 @@ public:
     Button *day_btn;
     Button *week_btn;
     Button *month_btn;
+
     std::vector<date::year_month_day> _current_week_dates;
+    std::vector<date::year_month_day> _current_month_dates;
     std::vector<Button *> _week_view_buttons;
+    std::vector<Button *> _month_view_buttons;
     std::map<int, Checkbox *> _task_checkboxes;
     std::map<Calendar::ViewMode, Button *> _view_switch_buttons;
 };
@@ -87,27 +90,54 @@ UIManager::UIManager(ShaderProgram *ui_program, ShaderProgram *text_program, Tex
                 this->_view_switch_buttons[Calendar::ViewMode::Month]->base_bkg_color.Lerp(Color(220, 208, 255), 25.0f);
         });
 
-    _elements = {};
-    _elements.push_back(_view_switch_buttons.at(Calendar::ViewMode::Month));
-    _elements.push_back(_view_switch_buttons.at(Calendar::ViewMode::Day));
-    _elements.push_back(_view_switch_buttons.at(Calendar::ViewMode::Week));
-
     _task_checkboxes = {};
-    auto dat = date::sys_days(_calendar.get_current_date());
+    auto curr_date = _calendar.get_current_date();
+    auto dat = date::sys_days(curr_date);
     auto wkd = date::weekday(dat);
     auto wkd_diff = (wkd - date::Monday);
     auto week_start = date::sys_days(dat - wkd_diff);
+
     _current_week_dates = {};
     for (int8_t i = 0; i < 7; i++)
     {
         _current_week_dates.push_back(week_start + date::days{i});
     }
+
     _week_view_buttons = {};
     for (int8_t i = 0; i < 7; i++)
     {
         _week_view_buttons.push_back(new Button(vector3(-0.75 + 0.25 * i, 0.5, 0), vector3(0.125, 0.8, 0), Color(), Color(0, 0, 0), [this, i]()
                                                 {_calendar.navigate_to_date(_current_week_dates[i]);_calendar.set_view_mode(Calendar::ViewMode::Day); }, nullptr));
         _elements.push_back(_week_view_buttons[i]);
+    }
+
+    _month_view_buttons = {};
+    auto start_wkd = date::weekday(date::year_month_day(curr_date.year(), curr_date.month(), date::day{1}));
+    auto days_count = (date::sys_days(date::year_month_day(date::year_month_day_last(curr_date.year(), date::month_day_last(curr_date.month())))) -
+                       date::sys_days(date::year_month_day(curr_date.year(), curr_date.month(), date::day{1})))
+                          .count() +
+                      1;
+    const float startX = 100.0f, startY = 600.0f;
+    float currY = 0.5;
+    for (int8_t i = 0; i < days_count; i++)
+    {
+        if ((i + 1) % 7 == 0)
+        {
+            currY -= 0.125;
+        }
+        _month_view_buttons.push_back(
+            new Button(
+                vector3(-0.75 + date::weekday{(unsigned int)((i + 1) % 7)}.c_encoding() * 0.125, currY, 0),
+                vector3(0.1, 0.1, 0),
+                Color(),
+                Color(0, 0, 0),
+                [this, i, curr_date]()
+                {
+                    _calendar.navigate_to_date(date::year_month_day(curr_date.year(), curr_date.month(), date::day{(unsigned int)(i + 1)}));
+                    _calendar.set_view_mode(Calendar::ViewMode::Day);
+                },
+                nullptr));
+        _elements.push_back(_month_view_buttons[i]);
     }
 }
 UIManager::~UIManager() = default;
@@ -179,6 +209,25 @@ void UIManager::draw_calendar_week_mode() const
 }
 void UIManager::draw_calendar_month_mode() const
 {
+    const float cellW = 100.0f;
+    const float startX = 100.0f, startY = 600.0f;
+    const char *days[] = {"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"};
+
+    ui_render_program->use();
+
+    for (int i = 0; i < _month_view_buttons.size(); ++i)
+    {
+        _month_view_buttons[i]->draw(ui_render_program->program);
+    }
+
+    text_render_program->use();
+
+    for (int i = 0; i < 7; ++i)
+    {
+        _text_renderer->render_text(
+            days[i],
+            startX + (i * cellW), startY, 1.0f, Color(0, 0, 255));
+    }
 }
 
 void UIManager::update_tasks()
@@ -203,18 +252,69 @@ void UIManager::update_tasks()
 }
 void UIManager::update(double mouseX, double mouseY, int windowWidth, int windowHeight)
 {
-    for (int i = 0; i < _elements.size(); i++)
+    for (auto &[_, btn] : _view_switch_buttons)
     {
-        _elements[i]->update(mouseX, mouseY, windowWidth, windowHeight);
+        btn->update(mouseX, mouseY, windowWidth, windowHeight);
+    }
+    switch (_calendar.get_view_mode())
+    {
+    case Calendar::ViewMode::Day:
+        for (auto &[id, cb] : _task_checkboxes)
+        {
+            cb->update(mouseX, mouseY, windowWidth, windowHeight);
+        }
+        break;
+    case Calendar::ViewMode::Week:
+        for (int i = 0; i < _week_view_buttons.size(); i++)
+        {
+            _week_view_buttons[i]->update(mouseX, mouseY, windowWidth, windowHeight);
+        }
+        break;
+    case Calendar::ViewMode::Month:
+        for (int i = 0; i < _month_view_buttons.size(); i++)
+        {
+            _month_view_buttons[i]->update(mouseX, mouseY, windowWidth, windowHeight);
+        }
+        break;
     }
 }
 void UIManager::handle_click(double mouseX, double mouseY, int windowWidth, int windowHeight)
 {
-    for (int i = 0; i < _elements.size(); i++)
+    for (auto &[_, btn] : _view_switch_buttons)
     {
-        if (_elements[i]->contains_point(mouseX, mouseY, windowWidth, windowHeight))
+        if (btn->contains_point(mouseX, mouseY, windowWidth, windowHeight))
         {
-            _elements[i]->handle_click();
+            btn->handle_click();
         }
+    }
+    switch (_calendar.get_view_mode())
+    {
+    case Calendar::ViewMode::Day:
+        for (auto &[id, cb] : _task_checkboxes)
+        {
+            if (cb->contains_point(mouseX, mouseY, windowWidth, windowHeight))
+            {
+                cb->handle_click();
+            }
+        }
+        break;
+    case Calendar::ViewMode::Week:
+        for (int i = 0; i < _week_view_buttons.size(); i++)
+        {
+            if (_week_view_buttons[i]->contains_point(mouseX, mouseY, windowWidth, windowHeight))
+            {
+                _week_view_buttons[i]->handle_click();
+            }
+        }
+        break;
+    case Calendar::ViewMode::Month:
+        for (int i = 0; i < _month_view_buttons.size(); i++)
+        {
+            if (_month_view_buttons[i]->contains_point(mouseX, mouseY, windowWidth, windowHeight))
+            {
+                _month_view_buttons[i]->handle_click();
+            }
+        }
+        break;
     }
 }

@@ -25,7 +25,6 @@ public:
     TextRenderer *_text_renderer;
 
     Calendar _calendar;
-    std::vector<IUIElement *> _elements;
     GLFWwindow *_window;
     Color background_color;
     Color border_color;
@@ -34,7 +33,6 @@ public:
     Button *month_btn;
 
     std::vector<date::year_month_day> _current_week_dates;
-    std::vector<date::year_month_day> _current_month_dates;
     std::vector<Button *> _week_view_buttons;
     std::vector<Button *> _month_view_buttons;
     std::map<int, Checkbox *> _task_checkboxes;
@@ -108,7 +106,6 @@ UIManager::UIManager(ShaderProgram *ui_program, ShaderProgram *text_program, Tex
     {
         _week_view_buttons.push_back(new Button(vector3(-0.75 + 0.25 * i, 0.5, 0), vector3(0.125, 0.8, 0), Color(), Color(0, 0, 0), [this, i]()
                                                 {_calendar.navigate_to_date(_current_week_dates[i]);_calendar.set_view_mode(Calendar::ViewMode::Day); }, nullptr));
-        _elements.push_back(_week_view_buttons[i]);
     }
 
     _month_view_buttons = {};
@@ -137,10 +134,33 @@ UIManager::UIManager(ShaderProgram *ui_program, ShaderProgram *text_program, Tex
                     _calendar.set_view_mode(Calendar::ViewMode::Day);
                 },
                 nullptr));
-        _elements.push_back(_month_view_buttons[i]);
     }
 }
-UIManager::~UIManager() = default;
+UIManager::~UIManager()
+{
+    delete ui_render_program;
+    delete text_render_program;
+    delete _text_renderer;
+
+    delete day_btn;
+    delete week_btn;
+    delete month_btn;
+
+    _current_week_dates.clear();
+    for (auto &i : _week_view_buttons)
+    {
+        delete i;
+    }
+    for (auto &i : _month_view_buttons)
+    {
+        delete i;
+    }
+    for (auto &[_, cb] : _task_checkboxes)
+    {
+        delete cb;
+    }
+    _view_switch_buttons.clear();
+}
 
 void UIManager::draw_calendar() const
 {
@@ -246,7 +266,6 @@ void UIManager::update_tasks()
                 {
                     task->set_status(task->get_status() == Task::Status::Undone ? Task::Status::Done : Task::Status::Pending);
                 });
-            _elements.push_back(_task_checkboxes[task->get_id()]);
         }
     }
 }

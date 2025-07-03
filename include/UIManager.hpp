@@ -32,6 +32,8 @@ public:
     Button *day_btn;
     Button *week_btn;
     Button *month_btn;
+    std::vector<date::year_month_day> _current_week_dates;
+    std::vector<Button *> _week_view_buttons;
     std::map<int, Checkbox *> _task_checkboxes;
     std::map<Calendar::ViewMode, Button *> _view_switch_buttons;
 };
@@ -84,13 +86,29 @@ UIManager::UIManager(ShaderProgram *ui_program, ShaderProgram *text_program, Tex
             this->_view_switch_buttons[Calendar::ViewMode::Month]->current_bkg_color =
                 this->_view_switch_buttons[Calendar::ViewMode::Month]->base_bkg_color.Lerp(Color(220, 208, 255), 25.0f);
         });
-    
+
     _elements = {};
     _elements.push_back(_view_switch_buttons.at(Calendar::ViewMode::Month));
     _elements.push_back(_view_switch_buttons.at(Calendar::ViewMode::Day));
     _elements.push_back(_view_switch_buttons.at(Calendar::ViewMode::Week));
 
     _task_checkboxes = {};
+    auto dat = date::sys_days(_calendar.get_current_date());
+    auto wkd = date::weekday(dat);
+    auto wkd_diff = (wkd - date::Monday);
+    auto week_start = date::sys_days(dat - wkd_diff);
+    _current_week_dates = {};
+    for (int8_t i = 0; i < 7; i++)
+    {
+        _current_week_dates.push_back(week_start + date::days{i});
+    }
+    _week_view_buttons = {};
+    for (int8_t i = 0; i < 7; i++)
+    {
+        _week_view_buttons.push_back(new Button(vector3(-0.75 + 0.25 * i, 0.5, 0), vector3(0.125, 0.8, 0), Color(), Color(0, 0, 0), [this, i]()
+                                                {_calendar.navigate_to_date(_current_week_dates[i]);_calendar.set_view_mode(Calendar::ViewMode::Day); }, nullptr));
+        _elements.push_back(_week_view_buttons[i]);
+    }
 }
 UIManager::~UIManager() = default;
 
@@ -123,7 +141,7 @@ void UIManager::draw_calendar_day_mode() const
     // Текстовые координаты
     const float startPosX = 200.0f, startPosY = 560.0f;
 
-    std::vector<Task *> tasks = _calendar.get_tasks_for_month(_calendar.get_current_date());
+    std::vector<Task *> tasks = _calendar.get_tasks_for_day(_calendar.get_current_date());
     ui_render_program->use();
 
     for (int i = 0; i < tasks.size(); i++)
@@ -139,13 +157,16 @@ void UIManager::draw_calendar_day_mode() const
 }
 void UIManager::draw_calendar_week_mode() const
 {
-}
-void UIManager::draw_calendar_month_mode() const
-{
+    const float cellW = 100.0f;
+    const float startX = 100.0f, startY = 600.0f;
+    const char *days[] = {"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"};
 
-    const float cellW = 50.0f, cellH = 50.0f;
-    const float startX = 0.0f, startY = 0.0f;
-    const char *days[] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
+    ui_render_program->use();
+
+    for (int i = 0; i < 7; ++i)
+    {
+        _week_view_buttons[i]->draw(ui_render_program->program);
+    }
 
     text_render_program->use();
 
@@ -153,8 +174,11 @@ void UIManager::draw_calendar_month_mode() const
     {
         _text_renderer->render_text(
             days[i],
-            startX + (i * cellW), startY + 0.2f, 1.0f, Color(0, 0, 255));
+            startX + (i * cellW), startY, 1.0f, Color(0, 0, 255));
     }
+}
+void UIManager::draw_calendar_month_mode() const
+{
 }
 
 void UIManager::update_tasks()
@@ -173,6 +197,7 @@ void UIManager::update_tasks()
                 {
                     task->set_status(task->get_status() == Task::Status::Undone ? Task::Status::Done : Task::Status::Pending);
                 });
+            _elements.push_back(_task_checkboxes[task->get_id()]);
         }
     }
 }

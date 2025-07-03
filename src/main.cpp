@@ -59,8 +59,9 @@ int main()
 	ui._calendar.add_task(Task());
 	ui._calendar.add_task(Task());
 	ui._calendar.add_task(Task());
-	ui._calendar.add_task(Task());
+	ui._calendar.add_task(Task("text task", "desc", "", Task::Priority::Low,  date::year_month_day(date::year{2025}, date::month{7}, date::day{1})));
 	ui._calendar.set_view_mode(Calendar::ViewMode::Day);
+	ui._calendar.navigate_to_date(std::chrono::floor<date::days>(std::chrono::system_clock::now()));
 	ui.update_tasks();
 
 	glViewport(0, 0, 800, 800);

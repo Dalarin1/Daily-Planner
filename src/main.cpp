@@ -79,6 +79,13 @@ int main()
 		glClearColor(0.17f, 0.57f, 0.24f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 
+		glfwGetCursorPos(window, &x, &y);
+
+		ui.update(x, y, 800, 800);
+		if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
+		{
+			ui.handle_click(x, y, 800, 800);
+		}
 		ui.draw_calendar();
 
 		glfwSwapBuffers(window);

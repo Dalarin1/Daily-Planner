@@ -84,6 +84,12 @@ UIManager::UIManager(ShaderProgram *ui_program, ShaderProgram *text_program, Tex
             this->_view_switch_buttons[Calendar::ViewMode::Month]->current_bkg_color =
                 this->_view_switch_buttons[Calendar::ViewMode::Month]->base_bkg_color.Lerp(Color(220, 208, 255), 25.0f);
         });
+    
+    _elements = {};
+    _elements.push_back(_view_switch_buttons.at(Calendar::ViewMode::Month));
+    _elements.push_back(_view_switch_buttons.at(Calendar::ViewMode::Day));
+    _elements.push_back(_view_switch_buttons.at(Calendar::ViewMode::Week));
+
     _task_checkboxes = {};
 }
 UIManager::~UIManager() = default;

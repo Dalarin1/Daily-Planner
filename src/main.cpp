@@ -21,6 +21,7 @@ void processInput(GLFWwindow *window)
 	}
 }
 
+
 int main()
 {
 
@@ -64,13 +65,11 @@ int main()
 	ui._calendar.navigate_to_date(std::chrono::floor<date::days>(std::chrono::system_clock::now()));
 	ui.update_tasks();
 
+
 	glViewport(0, 0, 800, 800);
 	double x, y;
-	char i = 0;
-
 	const int targetFPS = 30; // Достаточно для интерфейса
 	const double frameDelay = 1.0 / targetFPS;
-
 	// ОПТИМИЗЕЙШЕСТВО, ВСРАТО, НО ЖЕСТКО ЗАНИЖАЕТ CPU с 50% до 3%
 	while (!glfwWindowShouldClose(window))
 	{

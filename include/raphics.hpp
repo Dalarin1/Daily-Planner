@@ -42,7 +42,7 @@ public:
         base_border_color = _borderColor;
         current_bkg_color = base_bkg_color;
         current_border_color = base_border_color;
-
+        
         Bounds = Rectangle(_pos, _size);
         OnClick = _onClick;
         OnHover = _onHover;

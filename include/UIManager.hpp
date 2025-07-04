@@ -16,8 +16,6 @@ public:
     void update_tasks();
     void update(double mouseX, double mouseY, int windowWidth, int windowHeight);
     void handle_click(double mouseX, double mouseY, int windowWidth, int windowHeight);
-    void draw_all(unsigned int shader_program) const;
-
     ~UIManager();
 
     ShaderProgram *ui_render_program;
@@ -26,13 +24,7 @@ public:
 
     Calendar _calendar;
     GLFWwindow *_window;
-    Color background_color;
-    Color border_color;
-    Button *day_btn;
-    Button *week_btn;
-    Button *month_btn;
 
-    std::vector<date::year_month_day> _current_week_dates;
     std::vector<Button *> _week_view_buttons;
     std::vector<Button *> _month_view_buttons;
     std::map<int, Checkbox *> _task_checkboxes;
@@ -50,10 +42,7 @@ UIManager::UIManager(ShaderProgram *ui_program, ShaderProgram *text_program, Tex
         vector3(-0.5, 0.75, 0),
         vector3(0.25, 0.125, 0),
         Color(0, 0, 0), Color(153, 50, 204),
-        [this]()
-        {
-            _calendar.set_view_mode(Calendar::ViewMode::Day);
-        },
+        [this](){ _calendar.set_view_mode(Calendar::ViewMode::Day); },
         [this]()
         {
             this->_view_switch_buttons[Calendar::ViewMode::Day]->current_bkg_color =
@@ -64,13 +53,9 @@ UIManager::UIManager(ShaderProgram *ui_program, ShaderProgram *text_program, Tex
         vector3(-0.25, 0.75, 0),
         vector3(0.25, 0.125, 0),
         Color(0, 0, 0), Color(153, 50, 204),
+        [this](){ _calendar.set_view_mode(Calendar::ViewMode::Week); },
         [this]()
-        {
-            _calendar.set_view_mode(Calendar::ViewMode::Week);
-        },
-        [this]()
-        {
-            this->_view_switch_buttons[Calendar::ViewMode::Week]->current_bkg_color =
+        {   this->_view_switch_buttons[Calendar::ViewMode::Week]->current_bkg_color =
                 this->_view_switch_buttons[Calendar::ViewMode::Week]->base_bkg_color.Lerp(Color(220, 208, 255), 25.0f);
         });
 
@@ -78,10 +63,7 @@ UIManager::UIManager(ShaderProgram *ui_program, ShaderProgram *text_program, Tex
         vector3(0, 0.75, 0),
         vector3(0.25, 0.125, 0),
         Color(0, 0, 0), Color(153, 50, 204),
-        [this]()
-        {
-            _calendar.set_view_mode(Calendar::ViewMode::Month);
-        },
+        [this](){ _calendar.set_view_mode(Calendar::ViewMode::Month); },
         [this]()
         {
             this->_view_switch_buttons[Calendar::ViewMode::Month]->current_bkg_color =
@@ -90,22 +72,13 @@ UIManager::UIManager(ShaderProgram *ui_program, ShaderProgram *text_program, Tex
 
     _task_checkboxes = {};
     auto curr_date = _calendar.get_current_date();
-    auto dat = date::sys_days(curr_date);
-    auto wkd = date::weekday(dat);
-    auto wkd_diff = (wkd - date::Monday);
-    auto week_start = date::sys_days(dat - wkd_diff);
-
-    _current_week_dates = {};
-    for (int8_t i = 0; i < 7; i++)
-    {
-        _current_week_dates.push_back(week_start + date::days{i});
-    }
+    auto week_start = date::sys_days(date::sys_days(curr_date) - (date::weekday(date::sys_days(curr_date)) - date::Monday));
 
     _week_view_buttons = {};
     for (int8_t i = 0; i < 7; i++)
     {
-        _week_view_buttons.push_back(new Button(vector3(-0.75 + 0.25 * i, 0.5, 0), vector3(0.125, 0.8, 0), Color(), Color(0, 0, 0), [this, i]()
-                                                {_calendar.navigate_to_date(_current_week_dates[i]);_calendar.set_view_mode(Calendar::ViewMode::Day); }, nullptr));
+        _week_view_buttons.push_back(new Button(vector3(-0.75 + 0.25 * i, 0.5, 0), vector3(0.125, 0.8, 0), Color(), Color(0, 0, 0), [this, i, week_start]()
+                                                {_calendar.navigate_to_date(week_start + date::days{i});_calendar.set_view_mode(Calendar::ViewMode::Day); }, nullptr));
     }
 
     _month_view_buttons = {};
@@ -142,11 +115,6 @@ UIManager::~UIManager()
     delete text_render_program;
     delete _text_renderer;
 
-    delete day_btn;
-    delete week_btn;
-    delete month_btn;
-
-    _current_week_dates.clear();
     for (auto &i : _week_view_buttons)
     {
         delete i;
@@ -159,18 +127,20 @@ UIManager::~UIManager()
     {
         delete cb;
     }
-    _view_switch_buttons.clear();
+    for (auto &[_, btn] : _view_switch_buttons)
+    {
+        delete btn;
+    }
 }
 
 void UIManager::draw_calendar() const
 {
     ui_render_program->use();
-    // Арбайт
+    
     for (const auto &[mode, btn_ptr] : _view_switch_buttons)
     {
         btn_ptr->draw(ui_render_program->program);
     }
-    // В процессе
     switch (_calendar.get_view_mode())
     {
     case Calendar::ViewMode::Month:

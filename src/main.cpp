@@ -66,6 +66,9 @@ int main()
 	ui.update_tasks();
 
 
+	Font arial = Font("include/arial.ttf", 32u);
+	Text_renderer renderer = Text_renderer(&text_shader_program);
+
 	glViewport(0, 0, 800, 800);
 	double x, y;
 	const int targetFPS = 30; // Достаточно для интерфейса

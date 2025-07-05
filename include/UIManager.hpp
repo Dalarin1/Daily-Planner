@@ -3,6 +3,14 @@
 #include "Calendar.hpp"
 #include "raphics.hpp"
 
+class DayModeUi{
+    public:
+    std::vector<IUIElement *> _elements;
+    DayModeUi(){
+        
+    }
+};
+
 class UIManager
 {
 public:
@@ -15,6 +23,7 @@ public:
 
     void update_tasks();
     void update(double mouseX, double mouseY, int windowWidth, int windowHeight);
+    void update_geometry(int new_window_width, int new_window_height);
     void handle_click(double mouseX, double mouseY, int windowWidth, int windowHeight);
     ~UIManager();
 
@@ -42,7 +51,8 @@ UIManager::UIManager(ShaderProgram *ui_program, ShaderProgram *text_program, Tex
         vector3(-0.5, 0.75, 0),
         vector3(0.25, 0.125, 0),
         Color(0, 0, 0), Color(153, 50, 204),
-        [this](){ _calendar.set_view_mode(Calendar::ViewMode::Day); },
+        [this]()
+        { _calendar.set_view_mode(Calendar::ViewMode::Day); },
         [this]()
         {
             this->_view_switch_buttons[Calendar::ViewMode::Day]->current_bkg_color =
@@ -53,9 +63,11 @@ UIManager::UIManager(ShaderProgram *ui_program, ShaderProgram *text_program, Tex
         vector3(-0.25, 0.75, 0),
         vector3(0.25, 0.125, 0),
         Color(0, 0, 0), Color(153, 50, 204),
-        [this](){ _calendar.set_view_mode(Calendar::ViewMode::Week); },
         [this]()
-        {   this->_view_switch_buttons[Calendar::ViewMode::Week]->current_bkg_color =
+        { _calendar.set_view_mode(Calendar::ViewMode::Week); },
+        [this]()
+        {
+            this->_view_switch_buttons[Calendar::ViewMode::Week]->current_bkg_color =
                 this->_view_switch_buttons[Calendar::ViewMode::Week]->base_bkg_color.Lerp(Color(220, 208, 255), 25.0f);
         });
 
@@ -63,7 +75,8 @@ UIManager::UIManager(ShaderProgram *ui_program, ShaderProgram *text_program, Tex
         vector3(0, 0.75, 0),
         vector3(0.25, 0.125, 0),
         Color(0, 0, 0), Color(153, 50, 204),
-        [this](){ _calendar.set_view_mode(Calendar::ViewMode::Month); },
+        [this]()
+        { _calendar.set_view_mode(Calendar::ViewMode::Month); },
         [this]()
         {
             this->_view_switch_buttons[Calendar::ViewMode::Month]->current_bkg_color =
@@ -136,7 +149,7 @@ UIManager::~UIManager()
 void UIManager::draw_calendar() const
 {
     ui_render_program->use();
-    
+
     for (const auto &[mode, btn_ptr] : _view_switch_buttons)
     {
         btn_ptr->draw(ui_render_program->program);

@@ -42,7 +42,7 @@ public:
         base_border_color = _borderColor;
         current_bkg_color = base_bkg_color;
         current_border_color = base_border_color;
-        
+
         Bounds = Rectangle(_pos, _size);
         OnClick = _onClick;
         OnHover = _onHover;
@@ -265,3 +265,92 @@ public:
                _bounds.Contains(vector3(x, y, 0));
     }
 };
+
+class Box : public IUIElement
+{
+public:
+    Color BackgroundColor;
+    Color BorderColor;
+    int BorderWidth;
+    Rectangle Bounds;
+
+    Box(vector3 position = vector3(),
+        vector3 size = vector3(),
+        Color background_color = Color(),
+        Color border_color = Color(),
+        int border_width = 1);
+
+    void draw(unsigned int shader_program) const override;
+    void update(double mouseX, double mouseY, int windowWidth, int windowHeight) override = 0;
+    void update_geometry();
+    void handle_click() override = 0;
+    bool contains_point(double x, double y, int windowWidth, int windowHeight) const override;
+
+protected:
+    GLuint _vao;
+    GLuint _vbo;
+    GLfloat _points[12];
+};
+
+Box::Box(vector3 position,
+         vector3 size,
+         Color background_color,
+         Color border_color,
+         int border_width)
+{
+    BackgroundColor = background_color;
+    BorderColor = border_color;
+    BorderWidth = border_width;
+    Bounds = Rectangle(position, size);
+
+    glGenBuffers(1, &_vbo);
+    glGenVertexArrays(1, &_vao);
+
+    update_geometry();
+}
+
+void Box::update_geometry()
+{
+    Bounds.Update();
+    for (int i = 0; i < 4; i++)
+    {
+        _points[3 * i] = Bounds.Points[i].X;
+        _points[3 * i + 1] = Bounds.Points[i].Y;
+        _points[3 * i + 2] = Bounds.Points[i].Z;
+    }
+
+    glBindVertexArray(_vao);
+    glBindBuffer(GL_ARRAY_BUFFER, _vbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(_points), _points, GL_DYNAMIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *)0);
+    glEnableVertexAttribArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+}
+
+void Box::draw(unsigned int shader_program) const
+{
+    GLint colorloc = glGetUniformLocation(shader_program, "color");
+    glUniform4f(colorloc,
+                BackgroundColor.Red / 255.0f,
+                BackgroundColor.Green / 255.0f,
+                BackgroundColor.Blue / 255.0f,
+                1.0f);
+    glBindVertexArray(_vao);
+    glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+
+    glUniform4f(colorloc,
+                BackgroundColor.Red / 255.0f,
+                BackgroundColor.Green / 255.0f,
+                BackgroundColor.Blue / 255.0f,
+                1.0f);
+
+    glLineWidth(BorderWidth);
+    glDrawArrays(GL_LINE_LOOP, 0, 4);
+    glBindVertexArray(0);
+}
+
+bool Box::contains_point(double x, double y, int windowWidth, int windowHeight) const
+{
+    return Bounds.Contains(vector3(2 * (x / windowWidth) - 1, 1 - 2 * (y / windowHeight), 0));
+}

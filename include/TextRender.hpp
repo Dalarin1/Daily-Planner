@@ -1,6 +1,5 @@
 #pragma once
 #include <map>
-#include <memory>
 #include "Primitives.hpp"
 #include "ShaderLoader.hpp"
 #include <ft2build.h>
@@ -81,7 +80,7 @@ class Text_renderer
 private:
     ShaderProgram *shader_program;
     GLuint VAO, VBO;
-    std::map<std::string, std::shared_ptr<Font>> fonts;
+    std::map<std::string, Font*> fonts;
 
 public:
     Text_renderer(ShaderProgram *_shader_program)
@@ -112,7 +111,7 @@ public:
 
     void load_font(const std::string &alias, const std::string &path, unsigned int size)
     {
-        fonts[alias] = std::make_unique<Font>(new Font(path, size));
+        fonts[alias] = new Font(path, size);
     }
 
     void render_text(const std::string &font_alias,

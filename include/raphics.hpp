@@ -203,68 +203,6 @@ public:
         button.current_bkg_color = button.base_bkg_color;
     }
 };
-class Textbox : public IUIElement
-{
-public:
-    const std::string &_text;
-    Color base_text_color;
-    Color current_text_color;
-    Color base_bkg_color;
-    Color current_bkg_color;
-    Color base_border_color;
-    Color current_border_color;
-    Rectangle _bounds;
-
-    GLuint vao;
-    GLuint vbo;
-    GLfloat bounds_points[12];
-
-    Textbox(const std::string &text = "Text",
-            vector3 pos = vector3(0, 0, 0),
-            vector3 size = vector3(0, 0, 0),
-            Color text_color = Color(0, 0, 0),
-            Color bkg_color = Color(),
-            Color border_color = Color(0, 0, 0))
-        : _text(text), _bounds(pos, size), base_text_color(text_color), base_bkg_color(bkg_color), base_border_color(border_color)
-    {
-        current_bkg_color = base_bkg_color;
-        current_border_color = base_border_color;
-        current_text_color = base_text_color;
-
-        glGenVertexArrays(1, &vao);
-        glGenBuffers(1, &vbo);
-        update_geometry();
-    }
-    void draw(unsigned int shader_program, TextRenderer *renderer) const
-    {
-        renderer->render_text(_text, _bounds.Location.X, _bounds.Location.Y, 1.0f, current_text_color);
-    }
-    void update_geometry()
-    {
-        for (int i = 0; i < 4; i++)
-        {
-            bounds_points[3 * i] = _bounds.Points[i].X;
-            bounds_points[3 * i + 1] = _bounds.Points[i].Y;
-            bounds_points[3 * i + 2] = _bounds.Points[i].Z;
-        }
-
-        glBindVertexArray(vao);
-        glBindBuffer(GL_ARRAY_BUFFER, vbo);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(bounds_points), bounds_points, GL_DYNAMIC_DRAW);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *)0);
-        glEnableVertexAttribArray(0);
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
-        glBindVertexArray(0);
-    }
-    void update(double mouseX, double mouseY, int windowWidth, int windowHeight) = 0;
-    void handle_click() = 0;
-    bool contains_point(double x, double y, int windowWidth, int windowHeight)
-    {
-        return clamp(x, 0.0, (double)windowWidth) == x &&
-               clamp(y, 0.0, (double)(windowHeight)) == y &&
-               _bounds.Contains(vector3(x, y, 0));
-    }
-};
 
 class Box : public IUIElement
 {

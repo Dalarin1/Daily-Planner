@@ -52,20 +52,19 @@ int main()
 	text_shader_program.add_shader(GL_FRAGMENT_SHADER, "shaders/text.frag");
 	text_shader_program.link();
 
-	TextRenderer textRenderer = TextRenderer(&text_shader_program, "include/arial.ttf", 32u);
+	TextRenderer textRenderer = TextRenderer(&text_shader_program);
+	textRenderer.load_font("arial32", "include/arial.ttf", 32u);
 
 	UIManager ui = UIManager(&ui_shader_program, &text_shader_program, &textRenderer);
-	ui._calendar.add_task(Task("Next item", "decs", "", Task::Priority::Medium, std::chrono::floor<date::days>(std::chrono::system_clock::now())));
+	// ui._font = textRenderer.fonts["arial32"];
+	ui._calendar.add_task(Task(L"Next item", L"decs", L"", Task::Priority::Medium, std::chrono::floor<date::days>(std::chrono::system_clock::now())));
 	ui._calendar.add_task(Task());
 	ui._calendar.add_task(Task());
-	ui._calendar.add_task(Task());
-	ui._calendar.add_task(Task("text task", "desc", "", Task::Priority::Low, date::year_month_day(date::year{2025}, date::month{7}, date::day{1})));
+	ui._calendar.add_task(Task(L"Колупаторо", L"Описание", L"", Task::Priority::Low, std::chrono::floor<date::days>(std::chrono::system_clock::now())));
+	ui._calendar.add_task(Task(L"text task", L"desc", L"", Task::Priority::Low, date::year_month_day(date::year{2025}, date::month{7}, date::day{1})));
 	ui._calendar.set_view_mode(Calendar::ViewMode::Day);
 	ui._calendar.navigate_to_date(std::chrono::floor<date::days>(std::chrono::system_clock::now()));
 	ui.update_tasks();
-
-	Text_renderer renderer = Text_renderer(&text_shader_program);
-	renderer.load_font("arial32", "include/arial.ttf", 32u);
 
 	glViewport(0, 0, 800, 800);
 	double x, y;
@@ -80,7 +79,7 @@ int main()
 		glClearColor(0.17f, 0.57f, 0.24f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 
-		renderer.render_text("arial32", L"Понедельник", vector2(400, 400), Color(0, 0, 0), 1.0f);
+		textRenderer.render_text("arial32", L"Понедельник", vector2(200, 200), Color(0,0,0), 1.0f);
 
 		glfwGetCursorPos(window, &x, &y);
 

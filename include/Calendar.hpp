@@ -27,7 +27,7 @@ public:
     void go_to_today();
 
     date::year_month_day get_current_date() const;
-    std::string get_active_filter() const;
+    std::wstring get_active_filter() const;
 
     std::vector<Task *> get_all_tasks() const;
     std::vector<Task *> get_tasks_for_day(const date::year_month_day &day) const;
@@ -37,15 +37,15 @@ public:
     void check_and_trigger_reminders(
         const std::function<void(const Task &)> &reminder_callback);
 
-    std::set<std::string> get_all_categories() const;
-    void set_category_filter(const std::string &category);
+    std::set<std::wstring> get_all_categories() const;
+    void set_category_filter(const std::wstring &category);
     void clear_category_filter();
 
 private:
     std::map<int, Task> _tasks;
     ViewMode _current_view = ViewMode::Month;
     date::year_month_day _current_date;
-    std::string _active_category_filter;
+    std::wstring _active_category_filter;
 
     bool is_task_active_on_date(const Task &task, const date::year_month_day &date) const;
     bool is_recurring_task_active(const Task &task, const date::year_month_day &date) const;
@@ -69,7 +69,7 @@ void Calendar::navigate_to_date(const date::year_month_day &date) { this->_curre
 void Calendar::go_to_today() { this->_current_date = std::chrono::floor<date::days>(std::chrono::system_clock::now()); }
 
 date::year_month_day Calendar::get_current_date() const { return _current_date; } 
-std::string Calendar::get_active_filter() const { return this->_active_category_filter; }
+std::wstring Calendar::get_active_filter() const { return this->_active_category_filter; }
 
 std::vector<Task *> Calendar::get_all_tasks() const {
     std::vector<Task* > out = {};
@@ -137,14 +137,14 @@ void Calendar::check_and_trigger_reminders(
     }
 }
 
-std::set<std::string> Calendar::get_all_categories() const
+std::set<std::wstring> Calendar::get_all_categories() const
 {
-    std::set<std::string> out = {};
+    std::set<std::wstring> out = {};
     for (const auto &[id, task] : _tasks)
     {
         out.insert(task.get_category());
     }
     return out;
 }
-void Calendar::set_category_filter(const std::string &category) { this->_active_category_filter = category; }
-void Calendar::clear_category_filter() { this->_active_category_filter = ""; }
+void Calendar::set_category_filter(const std::wstring &category) { this->_active_category_filter = category; }
+void Calendar::clear_category_filter() { this->_active_category_filter = L""; }

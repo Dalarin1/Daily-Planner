@@ -3,11 +3,12 @@
 #include "Calendar.hpp"
 #include "raphics.hpp"
 
-class DayModeUi{
-    public:
+class DayModeUi
+{
+public:
     std::vector<IUIElement *> _elements;
-    DayModeUi(){
-        
+    DayModeUi()
+    {
     }
 };
 
@@ -185,14 +186,15 @@ void UIManager::draw_calendar_day_mode() const
     text_render_program->use();
     for (int i = 0; i < tasks.size(); i++)
     {
-        _text_renderer->render_text_GL_coords(tasks[i]->get_title(), -0.5 + 0.05, 0.55f - 0.1 * i, 1.0f, Color(0, 0, 0), 800, 800);
+        _text_renderer->render_text_GL_coords("arial32", tasks[i]->get_title(), -0.5 + 0.05, 0.55f - 0.1 * i, 1.0f, Color(0, 0, 0), 800, 800);
     }
 }
 void UIManager::draw_calendar_week_mode() const
 {
     const float cellW = 100.0f;
     const float startX = 100.0f, startY = 600.0f;
-    const char *days[] = {"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"};
+
+    const wchar_t *days[] = {L"Mon", L"Tue", L"Wed", L"Thu", L"Fri", L"Sat", L"Sun"};
 
     ui_render_program->use();
 
@@ -205,16 +207,15 @@ void UIManager::draw_calendar_week_mode() const
 
     for (int i = 0; i < 7; ++i)
     {
-        _text_renderer->render_text(
-            days[i],
-            startX + (i * cellW), startY, 1.0f, Color(0, 0, 255));
+        _text_renderer->render_text("arial32", days[i],
+                                    vector2{startX + (i * cellW), startY}, Color(0, 0, 255), 1.0f);
     }
 }
 void UIManager::draw_calendar_month_mode() const
 {
     const float cellW = 100.0f;
     const float startX = 100.0f, startY = 600.0f;
-    const char *days[] = {"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"};
+    const wchar_t *days[] = {L"Mon", L"Tue", L"Wed", L"Thu", L"Fri", L"Sat", L"Sun"};
 
     ui_render_program->use();
 
@@ -227,9 +228,8 @@ void UIManager::draw_calendar_month_mode() const
 
     for (int i = 0; i < 7; ++i)
     {
-        _text_renderer->render_text(
-            days[i],
-            startX + (i * cellW), startY, 1.0f, Color(0, 0, 255));
+        _text_renderer->render_text("arial32", days[i],
+                                    vector2{startX + (i * cellW), startY}, Color(0, 0, 255), 1.0f);
     }
 }
 

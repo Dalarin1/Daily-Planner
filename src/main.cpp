@@ -21,7 +21,6 @@ void processInput(GLFWwindow *window)
 	}
 }
 
-
 int main()
 {
 
@@ -60,14 +59,13 @@ int main()
 	ui._calendar.add_task(Task());
 	ui._calendar.add_task(Task());
 	ui._calendar.add_task(Task());
-	ui._calendar.add_task(Task("text task", "desc", "", Task::Priority::Low,  date::year_month_day(date::year{2025}, date::month{7}, date::day{1})));
+	ui._calendar.add_task(Task("text task", "desc", "", Task::Priority::Low, date::year_month_day(date::year{2025}, date::month{7}, date::day{1})));
 	ui._calendar.set_view_mode(Calendar::ViewMode::Day);
 	ui._calendar.navigate_to_date(std::chrono::floor<date::days>(std::chrono::system_clock::now()));
 	ui.update_tasks();
 
-
-	Font arial = Font("include/arial.ttf", 32u);
 	Text_renderer renderer = Text_renderer(&text_shader_program);
+	renderer.load_font("arial32", "include/arial.ttf", 32u);
 
 	glViewport(0, 0, 800, 800);
 	double x, y;
@@ -81,6 +79,8 @@ int main()
 		// Рендеринг
 		glClearColor(0.17f, 0.57f, 0.24f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
+
+		renderer.render_text("arial32", L"Понедельник", vector2(400, 400), Color(0, 0, 0), 1.0f);
 
 		glfwGetCursorPos(window, &x, &y);
 

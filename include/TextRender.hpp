@@ -1,5 +1,7 @@
 #pragma once
+#include <iostream>
 #include <map>
+#include <string>
 #include "Primitives.hpp"
 #include "ShaderLoader.hpp"
 #include <ft2build.h>
@@ -60,8 +62,8 @@ public:
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
             glyphs[c] = {
-                {face->glyph->bitmap.width, face->glyph->bitmap.rows},
-                {face->glyph->bitmap_left, face->glyph->bitmap_top},
+                {(float)face->glyph->bitmap.width, (float)face->glyph->bitmap.rows},
+                {(float)face->glyph->bitmap_left, (float)face->glyph->bitmap_top},
                 face->glyph->advance.x,
                 texture};
         }
@@ -77,12 +79,12 @@ public:
 
 class Text_renderer
 {
-private:
+public:
     ShaderProgram *shader_program;
     GLuint VAO, VBO;
-    std::map<std::string, Font*> fonts;
+    std::map<std::string, Font *> fonts;
 
-public:
+
     Text_renderer(ShaderProgram *_shader_program)
     {
         shader_program = _shader_program;
@@ -113,9 +115,12 @@ public:
     {
         fonts[alias] = new Font(path, size);
     }
+    void load_font(Font * font, const std::string& alias){
+        fonts[alias] = font;
+    }
 
     void render_text(const std::string &font_alias,
-                     const std::string &text,
+                     const std::wstring &text,
                      const vector2 &position,
                      const Color &color,
                      float scale)
@@ -129,28 +134,27 @@ public:
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
         auto font = fonts.at(font_alias);
-
         float x = position.X;
         float y = position.Y;
 
         for (unsigned int c : text)
         {
-            Font::Glyph *ch = font->get_glyph(c);
-
             const auto &glyph = font->get_glyph(c);
-            float xpos = x + ch->bearing.X * scale;
-            float ypos = y - (ch->size.Y - ch->bearing.Y) * scale;
 
-            float w = ch->size.X * scale;
-            float h = ch->size.Y * scale;
+            float xpos = x + glyph->bearing.X * scale;
+            float ypos = y - (glyph->size.Y - glyph->bearing.Y) * scale;
+
+            float w = glyph->size.X * scale;
+            float h = glyph->size.Y * scale;
+
             float vertices[6][4] = {
                 {xpos, ypos + h, 0.0f, 0.0f},
                 {xpos, ypos, 0.0f, 1.0f},
                 {xpos + w, ypos, 1.0f, 1.0f},
-
                 {xpos, ypos + h, 0.0f, 0.0f},
                 {xpos + w, ypos, 1.0f, 1.0f},
                 {xpos + w, ypos + h, 1.0f, 0.0f}};
+
             glBindTexture(GL_TEXTURE_2D, glyph->textureID);
             glBindBuffer(GL_ARRAY_BUFFER, VBO);
             glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);

@@ -9,6 +9,11 @@
 #include <codecvt>
 #include <locale>
 
+
+//НЕ РАБОТАЕТ НИХРЕНА!
+
+#if 0
+
 std::wstring utf8_to_wstring(const std::string &str)
 {
     std::wstring_convert<std::codecvt_utf8<wchar_t>> conv;
@@ -188,3 +193,5 @@ private:
         std::cout << "Done.\n";
     }
 };
+
+#endif

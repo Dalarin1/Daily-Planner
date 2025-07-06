@@ -219,9 +219,9 @@ public:
         int border_width = 1);
 
     void draw(unsigned int shader_program) const override;
-    void update(double mouseX, double mouseY, int windowWidth, int windowHeight) override = 0;
+    void update(double mouseX, double mouseY, int windowWidth, int windowHeight) override {}
     void update_geometry();
-    void handle_click() override = 0;
+    void handle_click() override {}
     bool contains_point(double x, double y, int windowWidth, int windowHeight) const override;
 
 protected:

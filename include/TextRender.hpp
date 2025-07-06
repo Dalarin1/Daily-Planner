@@ -23,7 +23,7 @@ public:
     GLuint VAO, VBO;
     ShaderProgram *Program = nullptr;
 
-    TextRenderer(ShaderProgram *program, const std::string &fontPath, unsigned int fontSize)
+    TextRenderer(ShaderProgram *program, const std::string &fontPath, unsigned int fontSize, int windowWidth, int widnowHeight)
     {
         this->Program = program;
         this->Characters = {};
@@ -100,7 +100,7 @@ public:
         glBindVertexArray(0);
 
         Program->use();
-        Program->setMat4("projection", mat4::ortho(0.0f, 800.0f, 0.0f, 800.0f, -1.0f, 1.0f).m);
+        Program->setMat4("projection", mat4::ortho(0.0f, (float)windowWidth, 0.0f, (float)widnowHeight, -1.0f, 1.0f).m);
         Program->setInt("text", 0);
     }
 

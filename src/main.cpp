@@ -53,13 +53,12 @@ int main()
 	text_shader_program.add_shader(GL_FRAGMENT_SHADER, "shaders/text.frag");
 	text_shader_program.link();
 
-	TextRenderer textRenderer = TextRenderer(&text_shader_program, "include/arial.ttf", 32u);
+	TextRenderer textRenderer = TextRenderer(&text_shader_program, "include/arial.ttf", 32u, 800, 800);
 
 	UIManager ui = UIManager(&ui_shader_program, &text_shader_program, &textRenderer);
 	ui._calendar.add_task(Task("Next item", "decs", "", Task::Priority::Medium, std::chrono::floor<date::days>(std::chrono::system_clock::now())));
 	ui._calendar.add_task(Task());
 	ui._calendar.add_task(Task());
-	ui._calendar.add_task(Task("Колупаторо", "Описание", "", Task::Priority::Low, std::chrono::floor<date::days>(std::chrono::system_clock::now())));
 	ui._calendar.add_task(Task("text task", "desc", "", Task::Priority::Low, date::year_month_day(date::year{2025}, date::month{7}, date::day{1})));
 	ui._calendar.set_view_mode(Calendar::ViewMode::Day);
 	ui._calendar.navigate_to_date(std::chrono::floor<date::days>(std::chrono::system_clock::now()));
@@ -70,7 +69,6 @@ int main()
 	const int targetFPS = 30; // Достаточно для интерфейса
 	const double frameDelay = 1.0 / targetFPS;
 	// ОПТИМИЗЕЙШЕСТВО, ВСРАТО, НО ЖЕСТКО ЗАНИЖАЕТ CPU с 50% до 3%
-
 	while (!glfwWindowShouldClose(window))
 	{
 		auto frameStart = glfwGetTime();

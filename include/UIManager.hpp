@@ -3,7 +3,6 @@
 #include "Calendar.hpp"
 #include "raphics.hpp"
 
-
 class UIManager
 {
 public:
@@ -17,6 +16,11 @@ public:
     void update_tasks();
     void update(double mouseX, double mouseY, int windowWidth, int windowHeight);
     void update_geometry(int new_window_width, int new_window_height);
+
+    void crupdate_day_mode();
+    void crupdate_week_mode();
+    void crupdate_month_mode();
+
     void handle_click(double mouseX, double mouseY, int windowWidth, int windowHeight);
     ~UIManager();
 
@@ -27,10 +31,18 @@ public:
     Calendar _calendar;
     GLFWwindow *_window;
 
+    // лишние элементы
     std::vector<Button *> _week_view_buttons;
     std::vector<Button *> _month_view_buttons;
     std::map<int, Checkbox *> _task_checkboxes;
+
+    // это не лишнее
     std::map<Calendar::ViewMode, Button *> _view_switch_buttons;
+    std::vector<IUIElement *> _top_menu;
+
+    std::vector<IUIElement *> _day_view_elements;
+    std::vector<IUIElement *> _week_view_elements;
+    std::vector<IUIElement *> _month_view_elements;
 };
 
 UIManager::UIManager(ShaderProgram *ui_program, ShaderProgram *text_program, TextRenderer *text_renderer)
@@ -220,7 +232,7 @@ void UIManager::draw_calendar_month_mode() const
 
     for (int i = 0; i < 7; ++i)
     {
-        _text_renderer->render_text( days[i],
+        _text_renderer->render_text(days[i],
                                     startX + (i * cellW), startY, 1.0f, Color(0, 0, 255));
     }
 }
@@ -311,4 +323,62 @@ void UIManager::handle_click(double mouseX, double mouseY, int windowWidth, int 
         }
         break;
     }
+}
+
+void UIManager::crupdate_day_mode()
+{
+    _day_view_elements = {
+        new Box(vector3(), vector3(), Color(), Color(), 0),              // общий фон
+        new Box(vector3(), vector3(), Color(100, 100, 100), Color(), 0), // фон блока задач
+        new Box(vector3(), vector3(), Color(100, 100, 100), Color(), 0), // фон блока просмотра/редактирования задачи
+    };
+}
+void UIManager::crupdate_week_mode()
+{
+    _week_view_elements = {
+        new Box(vector3(), vector3(), Color(), Color(), 0), // общий фон
+        // дни недели
+        new Textbox("Mon", vector3(), vector3(), Color(176, 146, 146), Color(), nullptr, nullptr),
+        new Textbox("Tue", vector3(), vector3(), Color(176, 146, 146), Color(), nullptr, nullptr),
+        new Textbox("Wed", vector3(), vector3(), Color(176, 146, 146), Color(), nullptr, nullptr),
+        new Textbox("Thu", vector3(), vector3(), Color(176, 146, 146), Color(), nullptr, nullptr),
+        new Textbox("Fri", vector3(), vector3(), Color(176, 146, 146), Color(), nullptr, nullptr),
+        new Textbox("Sat", vector3(), vector3(), Color(176, 146, 146), Color(), nullptr, nullptr),
+        new Textbox("Sun", vector3(), vector3(), Color(176, 146, 146), Color(), nullptr, nullptr),
+        // квадраты фона. на них отрисовка задач
+        new Box(),
+        new Box(),
+        new Box(),
+        new Box(),
+        new Box(),
+        new Box(),
+        new Box(),
+
+        // отрисовка линиий границ между часами
+        new UILine(),
+        new UILine(),
+        new UILine(),
+        /*<...>*/
+
+    };
+}
+void UIManager::crupdate_month_mode()
+{
+    _month_view_elements = {
+        new Box(vector3(), vector3(), Color(), Color(), 0), // общий фон
+        // дни недели
+        new Textbox("Mon", vector3(), vector3(), Color(176, 146, 146), Color(), nullptr, nullptr),
+        new Textbox("Tue", vector3(), vector3(), Color(176, 146, 146), Color(), nullptr, nullptr),
+        new Textbox("Wed", vector3(), vector3(), Color(176, 146, 146), Color(), nullptr, nullptr),
+        new Textbox("Thu", vector3(), vector3(), Color(176, 146, 146), Color(), nullptr, nullptr),
+        new Textbox("Fri", vector3(), vector3(), Color(176, 146, 146), Color(), nullptr, nullptr),
+        new Textbox("Sat", vector3(), vector3(), Color(176, 146, 146), Color(), nullptr, nullptr),
+        new Textbox("Sun", vector3(), vector3(), Color(176, 146, 146), Color(), nullptr, nullptr),
+
+        // набор кнопок для каждого дня месяца
+        new Button(),
+        new Button(),
+        new Button(),
+        /*<...>*/
+    };
 }

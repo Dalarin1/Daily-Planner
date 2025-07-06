@@ -11,6 +11,7 @@ Learning Path: Local storage, calendar UI, and reminder notifications.
 Open-source Focus: Contributors can add recurring tasks, theme customization, and more notification options.
 */
 #include <iostream>
+#include "TextRenderV2.hpp"
 #include "UIManager.hpp"
 
 void processInput(GLFWwindow *window)
@@ -30,7 +31,7 @@ int main()
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-	GLFWwindow *window = glfwCreateWindow(800, 800, "DailyPlannerGL", NULL, NULL);
+	GLFWwindow *window = glfwCreateWindow(800, 800, "DailyPlannerG", NULL, NULL);
 
 	if (window == NULL)
 	{
@@ -52,16 +53,14 @@ int main()
 	text_shader_program.add_shader(GL_FRAGMENT_SHADER, "shaders/text.frag");
 	text_shader_program.link();
 
-	TextRenderer textRenderer = TextRenderer(&text_shader_program);
-	textRenderer.load_font("arial32", "include/arial.ttf", 32u);
+	TextRenderer textRenderer = TextRenderer(&text_shader_program, "include/arial.ttf", 32u);
 
 	UIManager ui = UIManager(&ui_shader_program, &text_shader_program, &textRenderer);
-	// ui._font = textRenderer.fonts["arial32"];
-	ui._calendar.add_task(Task(L"Next item", L"decs", L"", Task::Priority::Medium, std::chrono::floor<date::days>(std::chrono::system_clock::now())));
+	ui._calendar.add_task(Task("Next item", "decs", "", Task::Priority::Medium, std::chrono::floor<date::days>(std::chrono::system_clock::now())));
 	ui._calendar.add_task(Task());
 	ui._calendar.add_task(Task());
-	ui._calendar.add_task(Task(L"Колупаторо", L"Описание", L"", Task::Priority::Low, std::chrono::floor<date::days>(std::chrono::system_clock::now())));
-	ui._calendar.add_task(Task(L"text task", L"desc", L"", Task::Priority::Low, date::year_month_day(date::year{2025}, date::month{7}, date::day{1})));
+	ui._calendar.add_task(Task("Колупаторо", "Описание", "", Task::Priority::Low, std::chrono::floor<date::days>(std::chrono::system_clock::now())));
+	ui._calendar.add_task(Task("text task", "desc", "", Task::Priority::Low, date::year_month_day(date::year{2025}, date::month{7}, date::day{1})));
 	ui._calendar.set_view_mode(Calendar::ViewMode::Day);
 	ui._calendar.navigate_to_date(std::chrono::floor<date::days>(std::chrono::system_clock::now()));
 	ui.update_tasks();
@@ -71,6 +70,7 @@ int main()
 	const int targetFPS = 30; // Достаточно для интерфейса
 	const double frameDelay = 1.0 / targetFPS;
 	// ОПТИМИЗЕЙШЕСТВО, ВСРАТО, НО ЖЕСТКО ЗАНИЖАЕТ CPU с 50% до 3%
+
 	while (!glfwWindowShouldClose(window))
 	{
 		auto frameStart = glfwGetTime();
@@ -79,10 +79,7 @@ int main()
 		glClearColor(0.17f, 0.57f, 0.24f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 
-		textRenderer.render_text("arial32", L"Понедельник", vector2(200, 200), Color(0,0,0), 1.0f);
-
 		glfwGetCursorPos(window, &x, &y);
-
 		ui.update(x, y, 800, 800);
 		if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
 		{

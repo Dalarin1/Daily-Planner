@@ -20,9 +20,9 @@ public:
         High
     };
 
-    Task(const std::wstring &title = L"New task",
-         const std::wstring &description = L"",
-         const std::wstring &category = L"",
+    Task(const std::string &title = "New task",
+         const std::string &description = "",
+         const std::string &category = "",
          Priority priority = Priority::Medium,
          const date::year_month_day &due_date = std::chrono::floor<date::days>(std::chrono::system_clock::now()),
          const date::hh_mm_ss<std::chrono::minutes> &due_time = date::hh_mm_ss<std::chrono::minutes>{},      // Время
@@ -30,9 +30,9 @@ public:
          std::chrono::hours repeat_interval = std::chrono::hours{0});                                        // Период повтора в часах
 
     // Обновление задачи
-    void update(const std::wstring &new_title = L"New task",
-                const std::wstring &new_description = L"",
-                const std::wstring &new_category = L"",
+    void update(const std::string &new_title = "New task",
+                const std::string &new_description = "",
+                const std::string &new_category = "",
                 Priority new_priority = Priority::Medium,
                 const date::year_month_day &new_due_date = date::year_month_day{},
                 const date::hh_mm_ss<std::chrono::minutes> &new_due_time = date::hh_mm_ss<std::chrono::minutes>{},
@@ -46,9 +46,9 @@ public:
     std::string get_due_time_string() const;
 
     int get_id() const;
-    std::wstring get_title() const;
-    std::wstring get_description() const;
-    std::wstring get_category() const;
+    std::string get_title() const;
+    std::string get_description() const;
+    std::string get_category() const;
     Priority get_priority() const;
     Status get_status() const;
     bool is_repeating() const;
@@ -57,9 +57,9 @@ public:
     date::hh_mm_ss<std::chrono::minutes> get_due_time() const;
     date::hh_mm_ss<std::chrono::minutes> get_reminder_time() const;
 
-    void set_title(const std::wstring &new_title);
-    void set_description(const std::wstring &new_description);
-    void set_category(const std::wstring &new_category);
+    void set_title(const std::string &new_title);
+    void set_description(const std::string &new_description);
+    void set_category(const std::string &new_category);
     void set_priority(Priority new_priority);
     void set_status(Status new_status);
     void set_repeating(bool should_repeat);
@@ -71,9 +71,9 @@ public:
 private:
     static int last_id;
     int _id;
-    std::wstring _title;
-    std::wstring _description;
-    std::wstring _category;
+    std::string _title;
+    std::string _description;
+    std::string _category;
     date::year_month_day _due_date;                      // Дата выполнения
     date::hh_mm_ss<std::chrono::minutes> _due_time;      // Время выполнения
     date::hh_mm_ss<std::chrono::minutes> _reminder_time; // Время напоминания
@@ -88,9 +88,9 @@ private:
 
 int Task::last_id = 0;
 
-Task::Task(const std::wstring &title,
-           const std::wstring &description,
-           const std::wstring &category,
+Task::Task(const std::string &title,
+           const std::string &description,
+           const std::string &category,
            Priority priority,
            const date::year_month_day &due_date,
            const date::hh_mm_ss<std::chrono::minutes> &due_time,
@@ -110,9 +110,9 @@ Task::Task(const std::wstring &title,
 {
 }
 
-void Task::update(const std::wstring &new_title,
-                  const std::wstring &new_description,
-                  const std::wstring &new_category,
+void Task::update(const std::string &new_title,
+                  const std::string &new_description,
+                  const std::string &new_category,
                   Priority new_priority,
                   const date::year_month_day &new_due_date,
                   const date::hh_mm_ss<std::chrono::minutes> &new_due_time,
@@ -160,9 +160,9 @@ std::string Task::get_due_time_string() const
 }
 
 int Task::get_id() const { return _id; }
-std::wstring Task::get_title() const { return _title; }
-std::wstring Task::get_description() const { return _description; }
-std::wstring Task::get_category() const { return _category; }
+std::string Task::get_title() const { return _title; }
+std::string Task::get_description() const { return _description; }
+std::string Task::get_category() const { return _category; }
 Task::Priority Task::get_priority() const { return _priority; }
 Task::Status Task::get_status() const { return _status; }
 bool Task::is_repeating() const { return _is_repeating; }
@@ -171,9 +171,9 @@ date::year_month_day Task::get_due_date() const { return _due_date; }
 date::hh_mm_ss<std::chrono::minutes> Task::get_due_time() const { return _due_time; }
 date::hh_mm_ss<std::chrono::minutes> Task::get_reminder_time() const { return _reminder_time; }
 
-void Task::set_title(const std::wstring &new_title) { _title = new_title; }
-void Task::set_description(const std::wstring &new_description) { _description = new_description; }
-void Task::set_category(const std::wstring &new_category) { _category = new_category; }
+void Task::set_title(const std::string &new_title) { _title = new_title; }
+void Task::set_description(const std::string &new_description) { _description = new_description; }
+void Task::set_category(const std::string &new_category) { _category = new_category; }
 void Task::set_priority(Priority new_priority) { _priority = new_priority; }
 void Task::set_status(Status new_status) { _status = new_status; }
 void Task::set_repeating(bool should_repeat) { _is_repeating = should_repeat; }

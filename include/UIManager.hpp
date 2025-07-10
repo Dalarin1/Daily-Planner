@@ -18,6 +18,7 @@ public:
     void update_geometry(int new_window_width, int new_window_height);
 
     void crupdate_view_switch_buttons();
+    void crupdate_date_switch_elements();
     void crupdate_day_mode();
     void crupdate_week_mode();
     void crupdate_month_mode();
@@ -38,6 +39,7 @@ public:
 
     // это не лишнее
     std::map<Calendar::ViewMode, UIButton *> _view_switch_buttons;
+    std::vector<IUIElement* > _date_switch_elements;
     std::vector<IUIElement *> _top_menu;
 
     std::vector<IUIElement *> _day_view_elements;
@@ -53,6 +55,7 @@ UIManager::UIManager(std::shared_ptr<ShaderProgram> ui_program, std::shared_ptr<
     _calendar.set_view_mode(Calendar::ViewMode::Month);
 
     crupdate_view_switch_buttons();
+    crupdate_date_switch_elements();
     /*
         _task_checkboxes = {};
         auto curr_date = _calendar.get_current_date();
@@ -115,7 +118,6 @@ UIManager::~UIManager()
 
 void UIManager::draw_calendar() const
 {
-    
 
     switch (_calendar.get_view_mode())
     {
@@ -282,27 +284,33 @@ void UIManager::crupdate_view_switch_buttons()
 {
     _view_switch_buttons = {
         {Calendar::ViewMode::Day,
-         new UIButton(vector3(-0.5, 0.75, 0), vector3(0.25, 0.125, 0), Color(0, 0, 0), Color(153, 50, 204), Color(200, 0, 200), 1, "", [this]()
+         new UIButton(vector3(0.2, 0.75, 0), vector3(0.15, 0.075, 0), Color(0, 0, 0), Color(153, 50, 204), Color(200, 0, 200), 1, "", [this]()
                       { _calendar.set_view_mode(Calendar::ViewMode::Day); }, [this]()
                       { this->_view_switch_buttons[Calendar::ViewMode::Day]->BackgroundColor =
                             this->_view_switch_buttons[Calendar::ViewMode::Day]->get_base_background_color().Lerp(Color(220, 208, 255), 25.0f); }, _text_renderer)},
-        {Calendar::ViewMode::Week, new UIButton(vector3(-0.25, 0.75, 0), vector3(0.25, 0.125, 0), Color(0, 0, 0), Color(153, 50, 204), Color(200, 0, 200), 1, "", [this]()
+        {Calendar::ViewMode::Week, new UIButton(vector3(0.45, 0.75, 0), vector3(0.15, 0.075, 0), Color(0, 0, 0), Color(153, 50, 204), Color(200, 0, 200), 1, "", [this]()
                                                 { _calendar.set_view_mode(Calendar::ViewMode::Week); }, [this]()
                                                 { this->_view_switch_buttons[Calendar::ViewMode::Week]->BackgroundColor =
                                                       this->_view_switch_buttons[Calendar::ViewMode::Week]->get_base_background_color().Lerp(Color(220, 208, 255), 25.0f); }, _text_renderer)},
-        {Calendar::ViewMode::Month, new UIButton(vector3(0, 0.75, 0), vector3(0.25, 0.125, 0), Color(0, 0, 0), Color(153, 50, 204), Color(200, 0, 200), 1, "", [this]()
+        {Calendar::ViewMode::Month, new UIButton(vector3(0.7, 0.75, 0), vector3(0.15, 0.075, 0), Color(0, 0, 0), Color(153, 50, 204), Color(200, 0, 200), 1, "", [this]()
                                                  { _calendar.set_view_mode(Calendar::ViewMode::Month); }, [this]()
                                                  { this->_view_switch_buttons[Calendar::ViewMode::Month]->BackgroundColor =
                                                        this->_view_switch_buttons[Calendar::ViewMode::Month]->get_base_background_color().Lerp(Color(220, 208, 255), 25.0f); }, _text_renderer)}};
 }
-
+void UIManager::crupdate_date_switch_elements(){
+    _date_switch_elements = {
+        new UITextfield(vector3(-0.2, 0.75, 0), vector3(0.4, 0.125, 0), Color(100, 100, 10), Color(0,0,0), Color(0,0,0), 1, "DAY ONE", _text_renderer),
+        new UIButton(vector3(), vector3(), Color(), Color(), Color(), 1, "->", nullptr, nullptr, _text_renderer),
+        new UIButton(vector3(), vector3(), Color(), Color(), Color(), 1, "->", nullptr, nullptr, _text_renderer)
+    };
+}
 void UIManager::crupdate_day_mode()
 {
     std::vector<Task *> tasks = _calendar.get_tasks_for_day(_calendar.get_current_date());
     _day_view_elements = {
-        new UIRectangle(vector3(-0.9, 0.6, 0), vector3(1.8, 1.5, 0), Color(), Color(100, 100, 100), 1, _text_renderer), // общий фон
-        new UIRectangle(vector3(-0.85, 0.55, 0), vector3(0.8, 0.975, 0), Color(92, 92, 92), Color(), 0, _text_renderer),       // фон блока задач
-        new UIRectangle(vector3(0.0, 0.55, 0), vector3(0.85, 1.25, 0), Color(34,34,34), Color(), 0, _text_renderer),             // фон блока просмотра/редактирования задачи
+        new UIRectangle(vector3(-0.9, 0.6, 0), vector3(1.8, 1.5, 0), Color(), Color(100, 100, 100), 1, _text_renderer),  // общий фон
+        new UIRectangle(vector3(-0.85, 0.55, 0), vector3(0.8, 0.975, 0), Color(92, 92, 92), Color(), 0, _text_renderer), // фон блока задач
+        new UIRectangle(vector3(0.0, 0.55, 0), vector3(0.85, 1.25, 0), Color(34, 34, 34), Color(), 0, _text_renderer),   // фон блока просмотра/редактирования задачи
     };
     for (int i = 0; i < tasks.size(); i++)
     {

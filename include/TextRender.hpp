@@ -30,12 +30,12 @@ public:
         // Инициализация FreeType
         FT_Library ft;
         if (FT_Init_FreeType(&ft))
-            std::cerr << "ERROR::FREETYPE: Could not init FreeType Library" << std::endl;
+            std::cerr << "ERROR::FREETYPE: Could not init FreeType Library\n";
 
         // Загрузка шрифта
         FT_Face face;
         if (FT_New_Face(ft, fontPath.c_str(), 0, &face))
-            std::cerr << "ERROR::FREETYPE: Failed to load font" << std::endl;
+            std::cerr << "ERROR::FREETYPE: Failed to load font\n";
 
         // Установка размера шрифта
         FT_Set_Pixel_Sizes(face, 0, fontSize);

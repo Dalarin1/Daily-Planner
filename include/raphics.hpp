@@ -1,7 +1,7 @@
 #pragma once
 #include "TextRender.hpp"
 #include <functional>
-
+#include <memory>
 class IUIElement
 {
 public:
@@ -11,7 +11,7 @@ public:
     virtual void handle_click() = 0;
     virtual bool contains_point(double x, double y, int windowWidth, int windowHeight) const = 0;
 };
-
+#if 0
 class Button : public IUIElement
 {
 public:
@@ -203,92 +203,567 @@ public:
         button.current_bkg_color = button.base_bkg_color;
     }
 };
-
-class Box : public IUIElement
+class Textbox : public IUIElement
 {
+public:
+    std::string Text;
+    Rectangle Bounds;
+};
+
+class UIBox : public IUIElement
+{
+private:
+    GLuint m_vao;
+    GLuint m_vbo;
+    Color m_currentBackgroundColor;
+    Color m_currentBorderColor;
+    Color m_baseBackgroundColor;
+    Color m_baseBorderColor;
+
+public:
+    int BorderWidth;
+    Rectangle Bounds;
+
+    UIBox(vector3 position = vector3(),
+          vector3 size = vector3(),
+          Color background_color = Color(),
+          Color border_color = Color(),
+          int border_width = 1)
+    {
+        m_baseBackgroundColor = background_color;
+        m_baseBorderColor = border_color;
+        m_currentBackgroundColor = m_baseBackgroundColor;
+        m_currentBorderColor = m_baseBorderColor;
+        BorderWidth = border_width;
+        Bounds = Rectangle(position, size);
+
+        glGenBuffers(1, &m_vbo);
+        glGenVertexArrays(1, &m_vao);
+
+        update_geometry();
+    }
+
+    void draw(unsigned int shader_program) const override
+    {
+        GLint colorloc = glGetUniformLocation(shader_program, "color");
+        glUniform4f(colorloc,
+                    m_currentBackgroundColor.Red / 255.0f,
+                    m_currentBackgroundColor.Green / 255.0f,
+                    m_currentBackgroundColor.Blue / 255.0f,
+                    1.0f);
+        glBindVertexArray(m_vao);
+        glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+
+        if (BorderWidth > 0)
+        {
+            glUniform4f(colorloc,
+                        m_currentBorderColor.Red / 255.0f,
+                        m_currentBorderColor.Green / 255.0f,
+                        m_currentBorderColor.Blue / 255.0f,
+                        1.0f);
+
+            glLineWidth(BorderWidth);
+            glDrawArrays(GL_LINE_LOOP, 0, 4);
+            glBindVertexArray(0);
+        }
+    }
+    void update(double mouseX, double mouseY, int windowWidth, int windowHeight) override {}
+    void update_geometry()
+    {
+        Bounds.Update();
+
+        glBindVertexArray(m_vao);
+        glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(Bounds.Points), Bounds.Points, GL_DYNAMIC_DRAW);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *)0);
+        glEnableVertexAttribArray(0);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glBindVertexArray(0);
+    }
+    void handle_click() override {}
+    bool contains_point(double x, double y, int windowWidth, int windowHeight) const override
+    {
+        return Bounds.Contains(vector3(2 * (x / windowWidth) - 1, 1 - 2 * (y / windowHeight), 0));
+    }
+
+    void set_background_color(const Color &color)
+    {
+        m_currentBackgroundColor = color;
+    }
+    void set_border_color(const Color &color)
+    {
+        m_currentBorderColor = color;
+    }
+
+    void reset_colors()
+    {
+        m_currentBackgroundColor = m_baseBackgroundColor;
+        m_currentBorderColor = m_baseBorderColor;
+    }
+};
+
+class UIButton : public IUIElement
+{
+private:
+    TextRenderer *m_textRenderer;
+
+public:
+    UIBox Box;
+    bool IsPressed;
+    bool IsHovered;
+    std::string Text;
+    Color TextColor;
+    std::function<void()> OnClick;
+    std::function<void()> OnHover;
+    UIButton(vector3 position = vector3(),
+             vector3 size = vector3(),
+             Color background_color = Color(),
+             Color border_color = Color(),
+             Color text_color = Color(),
+             int border_width = 1,
+             const std::string &text = "",
+             std::function<void()> on_click = nullptr,
+             std::function<void()> on_hover = nullptr)
+    {
+        Box = UIBox(position, size, background_color, border_color, border_width);
+        Text = text;
+        TextColor = text_color;
+        OnClick = on_click;
+        OnHover = on_hover;
+    }
+
+    void draw(unsigned int shader_program) const
+    {
+        Box.draw(shader_program);
+        if (!Text.empty())
+            m_textRenderer->render_text_GL_coords(Text, Box.Bounds.Location.X, Box.Bounds.Location.Y, 1.0f, TextColor, 800, 800);
+    }
+    void update(double mouseX, double mouseY, int windowWidth, int windowHeight)
+    {
+        bool newHoverState = Box.contains_point(mouseX, mouseY, windowWidth, windowHeight);
+
+        if (newHoverState && !IsHovered)
+        {
+            if (OnHover)
+                OnHover();
+            IsHovered = true;
+        }
+        else if (!newHoverState && IsHovered)
+        {
+            Box.reset_colors();
+            IsHovered = false;
+        }
+    }
+    void handle_click()
+    {
+        if (OnClick)
+            OnClick();
+    }
+    bool contains_point(double x, double y, int windowWidth, int windowHeight) const
+    {
+        return Box.contains_point(x, y, windowWidth, windowHeight);
+    }
+};
+
+class UICheckbox : public IUIElement
+{
+private:
+    TextRenderer *m_textRenderer;
+
+public:
+    UIBox Box;
+    bool IsChecked;
+    bool IsHovered;
+    std::string Text;
+    Color TextColor;
+    std::function<void()> OnCheck;
+    std::function<void()> OnHover;
+
+    UICheckbox(vector3 position = vector3(),
+               vector3 size = vector3(),
+               Color background_color = Color(),
+               Color border_color = Color(),
+               Color text_color = Color(),
+               int border_width = 1,
+               const std::string &text = "",
+               std::function<void()> on_check = nullptr,
+               std::function<void()> on_hover = nullptr)
+    {
+        Box = UIBox(position, size, background_color, border_color, border_width);
+        Text = text;
+        TextColor = text_color;
+        OnCheck = on_check;
+        OnHover = on_hover;
+    }
+    void draw(unsigned int shader_program) const
+    {
+        Box.draw(shader_program);
+        if (!Text.empty())
+            m_textRenderer->render_text_GL_coords(Text, Box.Bounds.Location.X, Box.Bounds.Location.Y, 1.0f, TextColor, 800, 800);
+    }
+    void update(double mouseX, double mouseY, int windowWidth, int windowHeight)
+    {
+        bool newHoverState = Box.contains_point(mouseX, mouseY, windowWidth, windowHeight);
+
+        if (newHoverState && !IsHovered)
+        {
+            if (OnHover)
+                OnHover();
+            IsHovered = true;
+        }
+        else if (!newHoverState && IsHovered)
+        {
+            Box.reset_colors();
+            IsHovered = false;
+        }
+    }
+    void handle_click()
+    {
+        if (OnCheck)
+        {
+            OnCheck();
+        }
+    }
+    bool contains_point(double x, double y, int windowWidth, int windowHeight) const
+    {
+        return Box.contains_point(x, y, windowWidth, windowHeight);
+    }
+};
+
+class UITextfield : public IUIElement
+{
+private:
+    TextRenderer *m_textRenderer;
+
+public:
+    UIBox Box;
+    std::string Text;
+    Color TextColor;
+    UITextfield(vector3 position = vector3(),
+                vector3 size = vector3(),
+                Color background_color = Color(),
+                Color border_color = Color(),
+                Color text_color = Color(),
+                int border_width = 1,
+                const std::string &text = "")
+    {
+        Box = UIBox(position, size, background_color, border_color, border_width);
+        Text = text;
+        TextColor = text_color;
+    }
+    void draw(unsigned int shader_program) const override
+    {
+        Box.draw(shader_program);
+        if (!Text.empty())
+            m_textRenderer->render_text_GL_coords(Text, Box.Bounds.Location.X, Box.Bounds.Location.Y, 1.0f, TextColor, 800, 800);
+    }
+    void update(double mouseX, double mouseY, int windowWidth, int windowHeight) override {}
+    void handle_click() override {}
+    bool contains_point(double x, double y, int windowWidth, int windowHeight) const override
+    {
+        return Box.contains_point(x, y, windowWidth, windowHeight);
+    }
+};
+# endif
+// Базовый класс для прямоугольных элементов
+class UIRectangle : public IUIElement
+{
+protected:
+    Color m_baseBackgroundColor;
+    Color m_baseBorderColor;
+    std::shared_ptr<TextRenderer> m_textRenderer; // Общий рендерер текста
+    GLuint m_vao;
+    GLuint m_vbo;
+
+    void setup_buffers()
+    {
+        glGenVertexArrays(1, &m_vao);
+        glGenBuffers(1, &m_vbo);
+        update_geometry();
+    }
+
 public:
     Color BackgroundColor;
     Color BorderColor;
     int BorderWidth;
     Rectangle Bounds;
 
-    Box(vector3 position = vector3(),
-        vector3 size = vector3(),
-        Color background_color = Color(),
-        Color border_color = Color(),
-        int border_width = 1);
-
-    void draw(unsigned int shader_program) const override;
-    void update(double mouseX, double mouseY, int windowWidth, int windowHeight) override {}
-    void update_geometry();
-    void handle_click() override {}
-    bool contains_point(double x, double y, int windowWidth, int windowHeight) const override;
-
-protected:
-    GLuint _vao;
-    GLuint _vbo;
-    GLfloat _points[12];
-};
-
-Box::Box(vector3 position,
-         vector3 size,
-         Color background_color,
-         Color border_color,
-         int border_width)
-{
-    BackgroundColor = background_color;
-    BorderColor = border_color;
-    BorderWidth = border_width;
-    Bounds = Rectangle(position, size);
-
-    glGenBuffers(1, &_vbo);
-    glGenVertexArrays(1, &_vao);
-
-    update_geometry();
-}
-
-void Box::update_geometry()
-{
-    Bounds.Update();
-    for (int i = 0; i < 4; i++)
+    UIRectangle(vector3 position = vector3(),
+                vector3 size = vector3(),
+                Color background = Color(),
+                Color border = Color(),
+                int border_width = 1,
+                std::shared_ptr<TextRenderer> renderer = nullptr)
+        : m_textRenderer(renderer),
+          BackgroundColor(background),
+          BorderColor(border),
+          BorderWidth(border_width),
+          Bounds(position, size)
     {
-        _points[3 * i] = Bounds.Points[i].X;
-        _points[3 * i + 1] = Bounds.Points[i].Y;
-        _points[3 * i + 2] = Bounds.Points[i].Z;
+        m_baseBackgroundColor = background;
+        m_baseBorderColor = border;
+        setup_buffers();
     }
 
-    glBindVertexArray(_vao);
-    glBindBuffer(GL_ARRAY_BUFFER, _vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(_points), _points, GL_DYNAMIC_DRAW);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *)0);
-    glEnableVertexAttribArray(0);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindVertexArray(0);
-}
+    virtual ~UIRectangle()
+    {
+        glDeleteVertexArrays(1, &m_vao);
+        glDeleteBuffers(1, &m_vbo);
+    }
 
-void Box::draw(unsigned int shader_program) const
+    void update_geometry()
+    {
+        Bounds.Update();
+        glBindVertexArray(m_vao);
+        glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(Bounds.Points), Bounds.Points, GL_DYNAMIC_DRAW);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *)0);
+        glEnableVertexAttribArray(0);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glBindVertexArray(0);
+    }
+    void update(double x, double y, int w, int h) override {}
+    void draw(unsigned int shader_program) const override
+    {
+        GLint colorLoc = glGetUniformLocation(shader_program, "color");
+
+        // Отрисовка фона
+        glUniform4f(colorLoc, BackgroundColor.Red / 255.0f, BackgroundColor.Green / 255.0f, BackgroundColor.Blue / 255.0f, 1.0f);
+        glBindVertexArray(m_vao);
+        glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+
+        // Отрисовка границы
+        if (BorderWidth > 0)
+        {
+            glUniform4f(colorLoc, BorderColor.Red / 255.0f, BorderColor.Green / 255.0f, BorderColor.Blue / 255.0f, 1.0f);
+            glLineWidth(BorderWidth);
+            glDrawArrays(GL_LINE_LOOP, 0, 4);
+        }
+        glBindVertexArray(0);
+    }
+    void handle_click(){}
+    bool contains_point(double x, double y, int w, int h) const override
+    {
+        const float nx = 2.0f * (x / w) - 1.0f;
+        const float ny = 1.0f - 2.0f * (y / h);
+        return Bounds.Contains(vector3(nx, ny, 0));
+    }
+
+    Color get_base_background_color() const { return m_baseBackgroundColor; }
+    Color get_base_border_color() const { return m_baseBorderColor; }
+
+    void reset_colors()
+    {
+        BackgroundColor = m_baseBackgroundColor;
+        BorderColor = m_baseBorderColor;
+    }
+    void set_base_background_color(const Color &color) { m_baseBackgroundColor = color; }
+    void set_base_border_color(const Color &color) { m_baseBorderColor = color; }
+};
+
+// Класс для интерактивных элементов
+class UIInteractive : public UIRectangle
 {
-    GLint colorloc = glGetUniformLocation(shader_program, "color");
-    glUniform4f(colorloc,
-                BackgroundColor.Red / 255.0f,
-                BackgroundColor.Green / 255.0f,
-                BackgroundColor.Blue / 255.0f,
-                1.0f);
-    glBindVertexArray(_vao);
-    glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+protected:
+    bool m_hovered = false;
+    bool m_pressed = false;
 
-    glUniform4f(colorloc,
-                BackgroundColor.Red / 255.0f,
-                BackgroundColor.Green / 255.0f,
-                BackgroundColor.Blue / 255.0f,
-                1.0f);
+public:
+    std::function<void()> OnClick;
+    std::function<void()> OnHover;
 
-    glLineWidth(BorderWidth);
-    glDrawArrays(GL_LINE_LOOP, 0, 4);
-    glBindVertexArray(0);
-}
+    UIInteractive(vector3 pos = vector3(),
+                  vector3 size = vector3(),
+                  Color bg = Color(),
+                  Color border = Color(),
+                  int border_width = 1,
+                  std::shared_ptr<TextRenderer> renderer = nullptr)
+        : UIRectangle(pos, size, bg, border, border_width, renderer) {}
 
-bool Box::contains_point(double x, double y, int windowWidth, int windowHeight) const
+    void update(double mx, double my, int w, int h) override
+    {
+        const bool nowHovered = contains_point(mx, my, w, h);
+
+        if (nowHovered && !m_hovered)
+        {
+            if (OnHover)
+                OnHover();
+            m_hovered = true;
+        }
+        else if (!nowHovered && m_hovered)
+        {
+            m_hovered = false;
+        }
+    }
+
+    void handle_click() override
+    {
+        if (m_hovered && OnClick)
+        {
+            OnClick();
+        }
+    }
+
+    bool is_hovered() const { return m_hovered; }
+    bool is_pressed() const { return m_pressed; }
+};
+
+// Кнопка
+class UIButton : public UIInteractive
 {
-    return Bounds.Contains(vector3(2 * (x / windowWidth) - 1, 1 - 2 * (y / windowHeight), 0));
-}
+public:
+    std::string Text;
+    Color TextColor;
+    UIButton(vector3 pos = vector3(),
+             vector3 size = vector3(),
+             Color bg = Color(),
+             Color border = Color(),
+             Color textColor = Color(0, 0, 0),
+             int border_width = 1,
+             const std::string &text = "",
+             std::function<void()> onClick = nullptr,
+             std::function<void()> onHover = nullptr,
+             std::shared_ptr<TextRenderer> renderer = nullptr)
+        : UIInteractive(pos, size, bg, border, border_width, renderer),
+          Text(text),
+          TextColor(textColor)
+    {
+        OnClick = onClick;
+        OnHover = onHover;
+    }
+    void update(double mouseX, double mouseY, int windowWidth, int windowHeight) override{
+         bool newHoverState = contains_point(mouseX, mouseY, windowWidth, windowHeight);
+
+        if (newHoverState && !m_hovered)
+        {
+            if (OnHover)
+                OnHover();
+            m_hovered = true;
+        }
+        else if (!newHoverState && m_hovered)
+        {
+            reset_colors();
+            m_hovered = false;
+        }
+    }
+    void draw(unsigned int shader) const override
+    {
+        UIInteractive::draw(shader);
+        if (m_textRenderer && !Text.empty())
+        {
+            m_textRenderer->render_text_GL_coords(
+                Text,
+                Bounds.Location.X,
+                Bounds.Location.Y,
+                1.0f,
+                TextColor,
+                800,
+                800);
+        }
+    }
+};
+
+// Чекбокс
+class UICheckbox : public UIInteractive
+{
+private:
+    bool m_checked = false;
+    Color m_checkedColor;
+    Color m_uncheckedColor;
+public:
+    std::string Text;
+    Color TextColor;
+    std::function<void(bool)> OnChange;
+
+    UICheckbox(vector3 pos = vector3(),
+               vector3 size = vector3(),
+               Color uncheckedColor = Color(),
+               Color checkedColor = Color(0, 255, 0),
+               Color textColor = Color(0, 0, 0),
+               int border_width = 1,
+               const std::string &text = "",
+               std::function<void(bool)> onChange = nullptr,
+               std::shared_ptr<TextRenderer> renderer = nullptr)
+        : UIInteractive(pos, size, uncheckedColor, Color(0, 0, 0), border_width, renderer),
+          m_checkedColor(checkedColor),
+          m_uncheckedColor(uncheckedColor),
+          Text(text),
+          TextColor(textColor),
+          OnChange(onChange)
+    {
+        OnClick = [this]
+        {
+            m_checked = !m_checked;
+            update_appearance();
+            if (OnChange)
+                OnChange(m_checked);
+        };
+    }
+
+    void update_appearance()
+    {
+        BackgroundColor = m_checked ? m_checkedColor : m_uncheckedColor;
+    }
+
+    void draw(unsigned int shader) const override
+    {
+        UIInteractive::draw(shader);
+        if (m_textRenderer && !Text.empty())
+        {
+            m_textRenderer->render_text_GL_coords(
+                Text,
+                Bounds.Location.X + Bounds.Size.X,
+                Bounds.Location.Y - Bounds.Size.Y,
+                1.0f,
+                TextColor,
+                800,
+                800);
+        }
+    }
+
+    bool is_checked() const { return m_checked; }
+};
+
+// Текстовое поле
+class UITextfield : public UIRectangle
+{
+private:
+    bool m_focused;
+
+public:
+    std::string Text;
+    Color TextColor;
+
+    UITextfield(vector3 pos = vector3(),
+                vector3 size = vector3(),
+                Color bg = Color(),
+                Color border = Color(),
+                Color textColor = Color(0, 0, 0),
+                int border_width = 1,
+                std::string text = "",
+                std::shared_ptr<TextRenderer> renderer = nullptr)
+        : UIRectangle(pos, size, bg, border, border_width, renderer),
+          Text(text),
+          TextColor(textColor) {}
+
+    void handle_click() override
+    {
+        m_focused = true; // Упрощённая реализация
+    }
+
+    void draw(unsigned int shader) const override
+    {
+        UIRectangle::draw(shader);
+        if (m_textRenderer && !Text.empty())
+        {
+            m_textRenderer->render_text_GL_coords(
+                Text,
+                Bounds.Location.X,
+                Bounds.Location.Y,
+                1.0f,
+                TextColor,
+                800,
+                800);
+        }
+    }
+};

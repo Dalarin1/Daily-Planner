@@ -2,21 +2,22 @@
 #include <iostream>
 #include "Calendar.hpp"
 #include "raphics.hpp"
-
+#if 1
 class UIManager
 {
 public:
-    UIManager(ShaderProgram *ui_program, ShaderProgram *text_program, TextRenderer *_text_renderer);
+    UIManager(std::shared_ptr<ShaderProgram> ui_program, std::shared_ptr<TextRenderer> text_renderer);
     void draw_calendar() const;
 
     void draw_calendar_month_mode() const;
     void draw_calendar_week_mode() const;
     void draw_calendar_day_mode() const;
 
-    void update_tasks();
+    void update_tasks() {}
     void update(double mouseX, double mouseY, int windowWidth, int windowHeight);
     void update_geometry(int new_window_width, int new_window_height);
 
+    void crupdate_view_switch_buttons();
     void crupdate_day_mode();
     void crupdate_week_mode();
     void crupdate_month_mode();
@@ -24,20 +25,19 @@ public:
     void handle_click(double mouseX, double mouseY, int windowWidth, int windowHeight);
     ~UIManager();
 
-    ShaderProgram *ui_render_program;
-    ShaderProgram *text_render_program;
-    TextRenderer *_text_renderer;
+    std::shared_ptr<ShaderProgram> ui_render_program;
+    std::shared_ptr<TextRenderer> _text_renderer;
 
     Calendar _calendar;
-    GLFWwindow *_window;
+    std::shared_ptr<GLFWwindow> _window;
 
     // лишние элементы
-    std::vector<Button *> _week_view_buttons;
-    std::vector<Button *> _month_view_buttons;
-    std::map<int, Checkbox *> _task_checkboxes;
+    // std::vector<UIButton *> _week_view_buttons;
+    // std::vector<UIButton *> _month_view_buttons;
+    // std::map<int, UICheckbox *> _task_checkboxes;
 
     // это не лишнее
-    std::map<Calendar::ViewMode, Button *> _view_switch_buttons;
+    std::map<Calendar::ViewMode, UIButton *> _view_switch_buttons;
     std::vector<IUIElement *> _top_menu;
 
     std::vector<IUIElement *> _day_view_elements;
@@ -45,105 +45,67 @@ public:
     std::vector<IUIElement *> _month_view_elements;
 };
 
-UIManager::UIManager(ShaderProgram *ui_program, ShaderProgram *text_program, TextRenderer *text_renderer)
+UIManager::UIManager(std::shared_ptr<ShaderProgram> ui_program, std::shared_ptr<TextRenderer> text_renderer)
 {
     ui_render_program = ui_program;
-    text_render_program = text_program;
     _text_renderer = text_renderer;
     _calendar = Calendar();
     _calendar.set_view_mode(Calendar::ViewMode::Month);
-    _view_switch_buttons[Calendar::ViewMode::Day] = new Button(
-        vector3(-0.5, 0.75, 0),
-        vector3(0.25, 0.125, 0),
-        Color(0, 0, 0), Color(153, 50, 204),
-        [this]()
-        { _calendar.set_view_mode(Calendar::ViewMode::Day); },
-        [this]()
+
+    crupdate_view_switch_buttons();
+    /*
+        _task_checkboxes = {};
+        auto curr_date = _calendar.get_current_date();
+        auto week_start = date::sys_days(date::sys_days(curr_date) - (date::weekday(date::sys_days(curr_date)) - date::Monday));
+
+        _week_view_buttons = {};
+        for (int8_t i = 0; i < 7; i++)
         {
-            this->_view_switch_buttons[Calendar::ViewMode::Day]->current_bkg_color =
-                this->_view_switch_buttons[Calendar::ViewMode::Day]->base_bkg_color.Lerp(Color(220, 208, 255), 25.0f);
-        });
-
-    _view_switch_buttons[Calendar::ViewMode::Week] = new Button(
-        vector3(-0.25, 0.75, 0),
-        vector3(0.25, 0.125, 0),
-        Color(0, 0, 0), Color(153, 50, 204),
-        [this]()
-        { _calendar.set_view_mode(Calendar::ViewMode::Week); },
-        [this]()
-        {
-            this->_view_switch_buttons[Calendar::ViewMode::Week]->current_bkg_color =
-                this->_view_switch_buttons[Calendar::ViewMode::Week]->base_bkg_color.Lerp(Color(220, 208, 255), 25.0f);
-        });
-
-    _view_switch_buttons[Calendar::ViewMode::Month] = new Button(
-        vector3(0, 0.75, 0),
-        vector3(0.25, 0.125, 0),
-        Color(0, 0, 0), Color(153, 50, 204),
-        [this]()
-        { _calendar.set_view_mode(Calendar::ViewMode::Month); },
-        [this]()
-        {
-            this->_view_switch_buttons[Calendar::ViewMode::Month]->current_bkg_color =
-                this->_view_switch_buttons[Calendar::ViewMode::Month]->base_bkg_color.Lerp(Color(220, 208, 255), 25.0f);
-        });
-
-    _task_checkboxes = {};
-    auto curr_date = _calendar.get_current_date();
-    auto week_start = date::sys_days(date::sys_days(curr_date) - (date::weekday(date::sys_days(curr_date)) - date::Monday));
-
-    _week_view_buttons = {};
-    for (int8_t i = 0; i < 7; i++)
-    {
-        _week_view_buttons.push_back(new Button(vector3(-0.75 + 0.25 * i, 0.5, 0), vector3(0.125, 0.8, 0), Color(), Color(0, 0, 0), [this, i, week_start]()
-                                                {_calendar.navigate_to_date(week_start + date::days{i});_calendar.set_view_mode(Calendar::ViewMode::Day); }, nullptr));
-    }
-
-    _month_view_buttons = {};
-    auto start_wkd = date::weekday(date::year_month_day(curr_date.year(), curr_date.month(), date::day{1}));
-    auto days_count = (date::sys_days(date::year_month_day(date::year_month_day_last(curr_date.year(), date::month_day_last(curr_date.month())))) -
-                       date::sys_days(date::year_month_day(curr_date.year(), curr_date.month(), date::day{1})))
-                          .count() +
-                      1;
-    const float startX = 100.0f, startY = 600.0f;
-    float currY = 0.5;
-    for (int8_t i = 0; i < days_count; i++)
-    {
-        if ((i + 1) % 7 == 0)
-        {
-            currY -= 0.125;
+            _week_view_buttons.push_back(new Button(vector3(-0.75 + 0.25 * i, 0.5, 0), vector3(0.125, 0.8, 0), Color(), Color(0, 0, 0), [this, i, week_start]()
+                                                    {_calendar.navigate_to_date(week_start + date::days{i});_calendar.set_view_mode(Calendar::ViewMode::Day); }, nullptr));
         }
-        _month_view_buttons.push_back(
-            new Button(
-                vector3(-0.75 + date::weekday{(unsigned int)((i + 1) % 7)}.c_encoding() * 0.125, currY, 0),
-                vector3(0.1, 0.1, 0),
-                Color(),
-                Color(0, 0, 0),
-                [this, i, curr_date]()
-                {
-                    _calendar.navigate_to_date(date::year_month_day(curr_date.year(), curr_date.month(), date::day{(unsigned int)(i + 1)}));
-                    _calendar.set_view_mode(Calendar::ViewMode::Day);
-                },
-                nullptr));
-    }
+
+        _month_view_buttons = {};
+        auto start_wkd = date::weekday(date::year_month_day(curr_date.year(), curr_date.month(), date::day{1}));
+        auto days_count = (date::sys_days(date::year_month_day(date::year_month_day_last(curr_date.year(), date::month_day_last(curr_date.month())))) -
+                           date::sys_days(date::year_month_day(curr_date.year(), curr_date.month(), date::day{1})))
+                              .count() +
+                          1;
+        const float startX = 100.0f, startY = 600.0f;
+        float currY = 0.5;
+        for (int8_t i = 0; i < days_count; i++)
+        {
+            if ((i + 1) % 7 == 0)
+            {
+                currY -= 0.125;
+            }
+            _month_view_buttons.push_back(
+                new Button(
+                    vector3(-0.75 + date::weekday{(unsigned int)((i + 1) % 7)}.c_encoding() * 0.125, currY, 0),
+                    vector3(0.1, 0.1, 0),
+                    Color(),
+                    Color(0, 0, 0),
+                    [this, i, curr_date]()
+                    {
+                        _calendar.navigate_to_date(date::year_month_day(curr_date.year(), curr_date.month(), date::day{(unsigned int)(i + 1)}));
+                        _calendar.set_view_mode(Calendar::ViewMode::Day);
+                    },
+                    nullptr));
+}*/
 }
 UIManager::~UIManager()
 {
-    delete ui_render_program;
-    delete text_render_program;
-    delete _text_renderer;
-
-    for (auto &i : _week_view_buttons)
+    for (auto &elem : _day_view_elements)
     {
-        delete i;
+        delete elem;
     }
-    for (auto &i : _month_view_buttons)
+    for (auto &elem : _week_view_elements)
     {
-        delete i;
+        delete elem;
     }
-    for (auto &[_, cb] : _task_checkboxes)
+    for (auto &elem : _month_view_elements)
     {
-        delete cb;
+        delete elem;
     }
     for (auto &[_, btn] : _view_switch_buttons)
     {
@@ -153,19 +115,15 @@ UIManager::~UIManager()
 
 void UIManager::draw_calendar() const
 {
-    ui_render_program->use();
+    
 
-    for (const auto &[mode, btn_ptr] : _view_switch_buttons)
-    {
-        btn_ptr->draw(ui_render_program->program);
-    }
     switch (_calendar.get_view_mode())
     {
     case Calendar::ViewMode::Month:
-        draw_calendar_month_mode();
+        // draw_calendar_month_mode();
         break;
     case Calendar::ViewMode::Week:
-        draw_calendar_week_mode();
+        // draw_calendar_week_mode();
         break;
     case Calendar::ViewMode::Day:
         draw_calendar_day_mode();
@@ -173,26 +131,21 @@ void UIManager::draw_calendar() const
     default:
         throw std::runtime_error("Unexpected calendar ViewMode");
     }
+    ui_render_program->use();
+    for (const auto &[mode, btn_ptr] : _view_switch_buttons)
+    {
+        btn_ptr->draw(ui_render_program->program);
+    }
 }
 void UIManager::draw_calendar_day_mode() const
 {
-    // Текстовые координаты
-    const float startPosX = 200.0f, startPosY = 560.0f;
-
-    std::vector<Task *> tasks = _calendar.get_tasks_for_day(_calendar.get_current_date());
-    ui_render_program->use();
-
-    for (int i = 0; i < tasks.size(); i++)
+    for (auto &i : _day_view_elements)
     {
-        _task_checkboxes.at(tasks[i]->get_id())->draw_at(ui_render_program->program, vector3(-0.5f, 0.6f - 0.1 * i, 0));
-    }
-
-    text_render_program->use();
-    for (int i = 0; i < tasks.size(); i++)
-    {
-        _text_renderer->render_text_GL_coords(tasks[i]->get_title(), -0.5 + 0.05, 0.55f - 0.1 * i, 1.0f, Color(0, 0, 0), 800, 800);
+        ui_render_program->use();
+        i->draw(ui_render_program->program);
     }
 }
+/*
 void UIManager::draw_calendar_week_mode() const
 {
     const float cellW = 100.0f;
@@ -255,7 +208,7 @@ void UIManager::update_tasks()
                 });
         }
     }
-}
+}*/
 void UIManager::update(double mouseX, double mouseY, int windowWidth, int windowHeight)
 {
     for (auto &[_, btn] : _view_switch_buttons)
@@ -265,21 +218,21 @@ void UIManager::update(double mouseX, double mouseY, int windowWidth, int window
     switch (_calendar.get_view_mode())
     {
     case Calendar::ViewMode::Day:
-        for (auto &[id, cb] : _task_checkboxes)
+        for (auto &elem : _day_view_elements)
         {
-            cb->update(mouseX, mouseY, windowWidth, windowHeight);
+            elem->update(mouseX, mouseY, windowWidth, windowHeight);
         }
         break;
     case Calendar::ViewMode::Week:
-        for (int i = 0; i < _week_view_buttons.size(); i++)
+        for (auto &elem : _week_view_elements)
         {
-            _week_view_buttons[i]->update(mouseX, mouseY, windowWidth, windowHeight);
+            elem->update(mouseX, mouseY, windowWidth, windowHeight);
         }
         break;
     case Calendar::ViewMode::Month:
-        for (int i = 0; i < _month_view_buttons.size(); i++)
+        for (auto &elem : _month_view_elements)
         {
-            _month_view_buttons[i]->update(mouseX, mouseY, windowWidth, windowHeight);
+            elem->update(mouseX, mouseY, windowWidth, windowHeight);
         }
         break;
     }
@@ -296,89 +249,107 @@ void UIManager::handle_click(double mouseX, double mouseY, int windowWidth, int 
     switch (_calendar.get_view_mode())
     {
     case Calendar::ViewMode::Day:
-        for (auto &[id, cb] : _task_checkboxes)
+        for (auto &elem : _day_view_elements)
         {
-            if (cb->contains_point(mouseX, mouseY, windowWidth, windowHeight))
+            if (elem->contains_point(mouseX, mouseY, windowWidth, windowHeight))
             {
-                cb->handle_click();
+                elem->handle_click();
             }
         }
         break;
     case Calendar::ViewMode::Week:
-        for (int i = 0; i < _week_view_buttons.size(); i++)
+        for (auto &elem : _week_view_elements)
         {
-            if (_week_view_buttons[i]->contains_point(mouseX, mouseY, windowWidth, windowHeight))
+            if (elem->contains_point(mouseX, mouseY, windowWidth, windowHeight))
             {
-                _week_view_buttons[i]->handle_click();
+                elem->handle_click();
             }
         }
         break;
     case Calendar::ViewMode::Month:
-        for (int i = 0; i < _month_view_buttons.size(); i++)
+        for (auto &elem : _month_view_elements)
         {
-            if (_month_view_buttons[i]->contains_point(mouseX, mouseY, windowWidth, windowHeight))
+            if (elem->contains_point(mouseX, mouseY, windowWidth, windowHeight))
             {
-                _month_view_buttons[i]->handle_click();
+                elem->handle_click();
             }
         }
         break;
     }
 }
 
+void UIManager::crupdate_view_switch_buttons()
+{
+    _view_switch_buttons = {
+        {Calendar::ViewMode::Day,
+         new UIButton(vector3(-0.5, 0.75, 0), vector3(0.25, 0.125, 0), Color(0, 0, 0), Color(153, 50, 204), Color(200, 0, 200), 1, "", [this]()
+                      { _calendar.set_view_mode(Calendar::ViewMode::Day); }, [this]()
+                      { this->_view_switch_buttons[Calendar::ViewMode::Day]->BackgroundColor =
+                            this->_view_switch_buttons[Calendar::ViewMode::Day]->get_base_background_color().Lerp(Color(220, 208, 255), 25.0f); }, _text_renderer)},
+        {Calendar::ViewMode::Week, new UIButton(vector3(-0.25, 0.75, 0), vector3(0.25, 0.125, 0), Color(0, 0, 0), Color(153, 50, 204), Color(200, 0, 200), 1, "", [this]()
+                                                { _calendar.set_view_mode(Calendar::ViewMode::Week); }, [this]()
+                                                { this->_view_switch_buttons[Calendar::ViewMode::Week]->BackgroundColor =
+                                                      this->_view_switch_buttons[Calendar::ViewMode::Week]->get_base_background_color().Lerp(Color(220, 208, 255), 25.0f); }, _text_renderer)},
+        {Calendar::ViewMode::Month, new UIButton(vector3(0, 0.75, 0), vector3(0.25, 0.125, 0), Color(0, 0, 0), Color(153, 50, 204), Color(200, 0, 200), 1, "", [this]()
+                                                 { _calendar.set_view_mode(Calendar::ViewMode::Month); }, [this]()
+                                                 { this->_view_switch_buttons[Calendar::ViewMode::Month]->BackgroundColor =
+                                                       this->_view_switch_buttons[Calendar::ViewMode::Month]->get_base_background_color().Lerp(Color(220, 208, 255), 25.0f); }, _text_renderer)}};
+}
+
 void UIManager::crupdate_day_mode()
 {
+    std::vector<Task *> tasks = _calendar.get_tasks_for_day(_calendar.get_current_date());
     _day_view_elements = {
-        new Box(vector3(), vector3(), Color(), Color(), 0),              // общий фон
-        new Box(vector3(), vector3(), Color(100, 100, 100), Color(), 0), // фон блока задач
-        new Box(vector3(), vector3(), Color(100, 100, 100), Color(), 0), // фон блока просмотра/редактирования задачи
+        new UIRectangle(vector3(-0.9, 0.6, 0), vector3(1.8, 1.5, 0), Color(), Color(100, 100, 100), 1, _text_renderer), // общий фон
+        new UIRectangle(vector3(-0.85, 0.55, 0), vector3(0.8, 0.975, 0), Color(92, 92, 92), Color(), 0, _text_renderer),       // фон блока задач
+        new UIRectangle(vector3(0.0, 0.55, 0), vector3(0.85, 1.25, 0), Color(34,34,34), Color(), 0, _text_renderer),             // фон блока просмотра/редактирования задачи
     };
+    for (int i = 0; i < tasks.size(); i++)
+    {
+        _day_view_elements.push_back(new UICheckbox(vector3(-0.8f, 0.5f - 0.1 * i, 0), vector3(0.05, 0.05, 0), Color(), Color(0, 0, 0), Color(0, 0, 1), 1, tasks[i]->get_title(), nullptr, _text_renderer));
+    }
 }
 void UIManager::crupdate_week_mode()
 {
     _week_view_elements = {
-        new Box(vector3(), vector3(), Color(), Color(), 0), // общий фон
+        new UIRectangle(vector3(), vector3(), Color(), Color(), 0), // общий фон
         // дни недели
-        new Textbox("Mon", vector3(), vector3(), Color(176, 146, 146), Color(), nullptr, nullptr),
-        new Textbox("Tue", vector3(), vector3(), Color(176, 146, 146), Color(), nullptr, nullptr),
-        new Textbox("Wed", vector3(), vector3(), Color(176, 146, 146), Color(), nullptr, nullptr),
-        new Textbox("Thu", vector3(), vector3(), Color(176, 146, 146), Color(), nullptr, nullptr),
-        new Textbox("Fri", vector3(), vector3(), Color(176, 146, 146), Color(), nullptr, nullptr),
-        new Textbox("Sat", vector3(), vector3(), Color(176, 146, 146), Color(), nullptr, nullptr),
-        new Textbox("Sun", vector3(), vector3(), Color(176, 146, 146), Color(), nullptr, nullptr),
-        // квадраты фона. на них отрисовка задач
-        new Box(),
-        new Box(),
-        new Box(),
-        new Box(),
-        new Box(),
-        new Box(),
-        new Box(),
+        new UITextfield(vector3(), vector3(), Color(176, 146, 146), Color(), Color(0, 255, 0), 0, "Mon", _text_renderer),
+        new UITextfield(vector3(), vector3(), Color(176, 146, 146), Color(), Color(0, 255, 0), 0, "Tue", _text_renderer),
+        new UITextfield(vector3(), vector3(), Color(176, 146, 146), Color(), Color(0, 255, 0), 0, "Wen", _text_renderer),
+        new UITextfield(vector3(), vector3(), Color(176, 146, 146), Color(), Color(0, 255, 0), 0, "Thu", _text_renderer),
+        new UITextfield(vector3(), vector3(), Color(176, 146, 146), Color(), Color(0, 255, 0), 0, "Fri", _text_renderer),
+        new UITextfield(vector3(), vector3(), Color(176, 146, 146), Color(), Color(0, 255, 0), 0, "Sat", _text_renderer),
+        new UITextfield(vector3(), vector3(), Color(176, 146, 146), Color(), Color(0, 255, 0), 0, "Sun", _text_renderer),
+        // Фон
+        new UIRectangle(),
 
         // отрисовка линиий границ между часами
-        new UILine(),
-        new UILine(),
-        new UILine(),
-        /*<...>*/
+        // new UILine(),
+        // new UILine(),
+        // new UILine(),
+        //<...>
 
     };
 }
 void UIManager::crupdate_month_mode()
 {
     _month_view_elements = {
-        new Box(vector3(), vector3(), Color(), Color(), 0), // общий фон
-        // дни недели
-        new Textbox("Mon", vector3(), vector3(), Color(176, 146, 146), Color(), nullptr, nullptr),
-        new Textbox("Tue", vector3(), vector3(), Color(176, 146, 146), Color(), nullptr, nullptr),
-        new Textbox("Wed", vector3(), vector3(), Color(176, 146, 146), Color(), nullptr, nullptr),
-        new Textbox("Thu", vector3(), vector3(), Color(176, 146, 146), Color(), nullptr, nullptr),
-        new Textbox("Fri", vector3(), vector3(), Color(176, 146, 146), Color(), nullptr, nullptr),
-        new Textbox("Sat", vector3(), vector3(), Color(176, 146, 146), Color(), nullptr, nullptr),
-        new Textbox("Sun", vector3(), vector3(), Color(176, 146, 146), Color(), nullptr, nullptr),
+        new UIRectangle(vector3(), vector3(), Color(), Color(), 0), // общий фон
+                                                                    // дни недели
+        new UITextfield(vector3(), vector3(), Color(176, 146, 146), Color(), Color(0, 255, 0), 0, "Mon", _text_renderer),
+        new UITextfield(vector3(), vector3(), Color(176, 146, 146), Color(), Color(0, 255, 0), 0, "Tue", _text_renderer),
+        new UITextfield(vector3(), vector3(), Color(176, 146, 146), Color(), Color(0, 255, 0), 0, "Wen", _text_renderer),
+        new UITextfield(vector3(), vector3(), Color(176, 146, 146), Color(), Color(0, 255, 0), 0, "Thu", _text_renderer),
+        new UITextfield(vector3(), vector3(), Color(176, 146, 146), Color(), Color(0, 255, 0), 0, "Fri", _text_renderer),
+        new UITextfield(vector3(), vector3(), Color(176, 146, 146), Color(), Color(0, 255, 0), 0, "Sat", _text_renderer),
+        new UITextfield(vector3(), vector3(), Color(176, 146, 146), Color(), Color(0, 255, 0), 0, "Sun", _text_renderer),
 
         // набор кнопок для каждого дня месяца
-        new Button(),
-        new Button(),
-        new Button(),
-        /*<...>*/
+        // new UIButton(),
+        // new Button(),
+        // new Button(),
+        //<...>
     };
 }
+#endif

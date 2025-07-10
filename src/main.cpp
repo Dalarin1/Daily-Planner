@@ -11,7 +11,6 @@ Learning Path: Local storage, calendar UI, and reminder notifications.
 Open-source Focus: Contributors can add recurring tasks, theme customization, and more notification options.
 */
 #include <iostream>
-#include "TextRenderV2.hpp"
 #include "UIManager.hpp"
 
 void processInput(GLFWwindow *window)
@@ -55,19 +54,22 @@ int main()
 
 	TextRenderer textRenderer = TextRenderer(&text_shader_program, "include/arial.ttf", 32u, 800, 800);
 
-	UIManager ui = UIManager(&ui_shader_program, &text_shader_program, &textRenderer);
+	UIManager ui = UIManager(std::make_shared<ShaderProgram>(ui_shader_program), std::make_shared<TextRenderer>(textRenderer));
 	ui._calendar.add_task(Task("Next item", "decs", "", Task::Priority::Medium, std::chrono::floor<date::days>(std::chrono::system_clock::now())));
 	ui._calendar.add_task(Task());
 	ui._calendar.add_task(Task());
 	ui._calendar.add_task(Task("text task", "desc", "", Task::Priority::Low, date::year_month_day(date::year{2025}, date::month{7}, date::day{1})));
 	ui._calendar.set_view_mode(Calendar::ViewMode::Day);
 	ui._calendar.navigate_to_date(std::chrono::floor<date::days>(std::chrono::system_clock::now()));
-	ui.update_tasks();
-
+	// ui.update_tasks();
+	ui.crupdate_day_mode();
+	ui.crupdate_week_mode();
+	ui.crupdate_month_mode();
 	glViewport(0, 0, 800, 800);
 	double x, y;
 	const int targetFPS = 30; // Достаточно для интерфейса
 	const double frameDelay = 1.0 / targetFPS;
+
 	// ОПТИМИЗЕЙШЕСТВО, ВСРАТО, НО ЖЕСТКО ЗАНИЖАЕТ CPU с 50% до 3%
 	while (!glfwWindowShouldClose(window))
 	{
@@ -84,7 +86,7 @@ int main()
 			ui.handle_click(x, y, 800, 800);
 		}
 		ui.draw_calendar();
-
+		ui_shader_program.use();
 		glfwSwapBuffers(window);
 
 		// Ограничение FPS

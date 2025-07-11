@@ -148,3 +148,7 @@ std::set<std::string> Calendar::get_all_categories() const
 }
 void Calendar::set_category_filter(const std::string &category) { this->_active_category_filter = category; }
 void Calendar::clear_category_filter() { this->_active_category_filter = ""; }
+
+std::string date_to_string(const date::year_month_day& date){
+    return date::format("%F", date);
+}

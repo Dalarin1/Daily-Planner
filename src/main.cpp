@@ -65,6 +65,7 @@ int main()
 	ui.crupdate_day_mode();
 	ui.crupdate_week_mode();
 	ui.crupdate_month_mode();
+	ui.crupdate_date_switch_elements();
 	glViewport(0, 0, 800, 800);
 	double x, y;
 	const int targetFPS = 30; // Достаточно для интерфейса

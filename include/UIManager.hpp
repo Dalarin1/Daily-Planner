@@ -39,7 +39,7 @@ public:
 
     // это не лишнее
     std::map<Calendar::ViewMode, UIButton *> _view_switch_buttons;
-    std::vector<IUIElement* > _date_switch_elements;
+    std::vector<IUIElement *> _date_switch_elements;
     std::vector<IUIElement *> _top_menu;
 
     std::vector<IUIElement *> _day_view_elements;
@@ -137,6 +137,11 @@ void UIManager::draw_calendar() const
     for (const auto &[mode, btn_ptr] : _view_switch_buttons)
     {
         btn_ptr->draw(ui_render_program->program);
+    }
+    for (const auto &elem : _date_switch_elements)
+    {
+        ui_render_program->use();
+        elem->draw(ui_render_program->program);
     }
 }
 void UIManager::draw_calendar_day_mode() const
@@ -284,25 +289,25 @@ void UIManager::crupdate_view_switch_buttons()
 {
     _view_switch_buttons = {
         {Calendar::ViewMode::Day,
-         new UIButton(vector3(0.2, 0.75, 0), vector3(0.15, 0.075, 0), Color(0, 0, 0), Color(153, 50, 204), Color(200, 0, 200), 1, "", [this]()
+         new UIButton(vector3(0.45, 0.75, 0), vector3(0.15, 0.125, 0), Color(0, 0, 0), Color(153, 50, 204), Color(200, 0, 200), 1, "", [this]()
                       { _calendar.set_view_mode(Calendar::ViewMode::Day); }, [this]()
                       { this->_view_switch_buttons[Calendar::ViewMode::Day]->BackgroundColor =
                             this->_view_switch_buttons[Calendar::ViewMode::Day]->get_base_background_color().Lerp(Color(220, 208, 255), 25.0f); }, _text_renderer)},
-        {Calendar::ViewMode::Week, new UIButton(vector3(0.45, 0.75, 0), vector3(0.15, 0.075, 0), Color(0, 0, 0), Color(153, 50, 204), Color(200, 0, 200), 1, "", [this]()
+        {Calendar::ViewMode::Week, new UIButton(vector3(0.6, 0.75, 0), vector3(0.15, 0.125, 0), Color(0, 0, 0), Color(153, 50, 204), Color(200, 0, 200), 1, "", [this]()
                                                 { _calendar.set_view_mode(Calendar::ViewMode::Week); }, [this]()
                                                 { this->_view_switch_buttons[Calendar::ViewMode::Week]->BackgroundColor =
                                                       this->_view_switch_buttons[Calendar::ViewMode::Week]->get_base_background_color().Lerp(Color(220, 208, 255), 25.0f); }, _text_renderer)},
-        {Calendar::ViewMode::Month, new UIButton(vector3(0.7, 0.75, 0), vector3(0.15, 0.075, 0), Color(0, 0, 0), Color(153, 50, 204), Color(200, 0, 200), 1, "", [this]()
+        {Calendar::ViewMode::Month, new UIButton(vector3(0.75, 0.75, 0), vector3(0.15, 0.125, 0), Color(0, 0, 0), Color(153, 50, 204), Color(200, 0, 200), 1, "", [this]()
                                                  { _calendar.set_view_mode(Calendar::ViewMode::Month); }, [this]()
                                                  { this->_view_switch_buttons[Calendar::ViewMode::Month]->BackgroundColor =
                                                        this->_view_switch_buttons[Calendar::ViewMode::Month]->get_base_background_color().Lerp(Color(220, 208, 255), 25.0f); }, _text_renderer)}};
 }
-void UIManager::crupdate_date_switch_elements(){
+void UIManager::crupdate_date_switch_elements()
+{
     _date_switch_elements = {
-        new UITextfield(vector3(-0.2, 0.75, 0), vector3(0.4, 0.125, 0), Color(100, 100, 10), Color(0,0,0), Color(0,0,0), 1, "DAY ONE", _text_renderer),
-        new UIButton(vector3(), vector3(), Color(), Color(), Color(), 1, "->", nullptr, nullptr, _text_renderer),
-        new UIButton(vector3(), vector3(), Color(), Color(), Color(), 1, "->", nullptr, nullptr, _text_renderer)
-    };
+        new UITextfield(vector3(-0.2, 0.75, 0), vector3(0.4, 0.125, 0), Color(100, 100, 100), Color(0, 0, 0), Color(0, 0, 0), 1, "DAY ONE", _text_renderer),
+        new UIButton(vector3(0.22, 0.75, 0), vector3(0.125, 0.125, 0), Color(100, 100, 100), Color(0, 0, 0), Color(0, 0, 0), 1, "->", nullptr, nullptr, _text_renderer),
+        new UIButton(vector3(-0.325, 0.75, 0), vector3(0.125, 0.125, 0), Color(100, 100, 100), Color(0, 0, 0), Color(0, 0, 0), 1, "<-", nullptr, nullptr, _text_renderer)};
 }
 void UIManager::crupdate_day_mode()
 {

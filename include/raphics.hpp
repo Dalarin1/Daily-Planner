@@ -654,7 +654,7 @@ public:
             m_textRenderer->render_text_GL_coords(
                 Text,
                 Bounds.Location.X,
-                Bounds.Location.Y,
+                Bounds.Location.Y -Bounds.Size.Y,
                 1.0f,
                 TextColor,
                 800,
@@ -759,7 +759,7 @@ public:
             m_textRenderer->render_text_GL_coords(
                 Text,
                 Bounds.Location.X,
-                Bounds.Location.Y,
+                Bounds.Location.Y - Bounds.Size.Y,
                 1.0f,
                 TextColor,
                 800,

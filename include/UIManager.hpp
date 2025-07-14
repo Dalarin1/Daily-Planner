@@ -122,7 +122,7 @@ void UIManager::draw_calendar() const
     switch (_calendar.get_view_mode())
     {
     case Calendar::ViewMode::Month:
-        // draw_calendar_month_mode();
+        draw_calendar_month_mode();
         break;
     case Calendar::ViewMode::Week:
         draw_calendar_week_mode();
@@ -160,29 +160,16 @@ void UIManager::draw_calendar_week_mode() const
         ui_render_program->use();
         elem->draw(ui_render_program->program);
     }
-} /*
- void UIManager::draw_calendar_month_mode() const
- {
-     const float cellW = 100.0f;
-     const float startX = 100.0f, startY = 600.0f;
-     const char *days[] = {"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"};
-
-     ui_render_program->use();
-
-     for (int i = 0; i < _month_view_buttons.size(); ++i)
-     {
-         _month_view_buttons[i]->draw(ui_render_program->program);
-     }
-
-     text_render_program->use();
-
-     for (int i = 0; i < 7; ++i)
-     {
-         _text_renderer->render_text(days[i],
-                                     startX + (i * cellW), startY, 1.0f, Color(0, 0, 255));
-     }
- }
-
+}
+void UIManager::draw_calendar_month_mode() const
+{
+    for (auto &elem : _month_view_elements)
+    {
+        ui_render_program->use();
+        elem->draw(ui_render_program->program);
+    }
+}
+/*
  void UIManager::update_tasks()
  {
      auto tasks = _calendar.get_all_tasks();
@@ -366,42 +353,65 @@ void UIManager::crupdate_week_mode()
     std::vector<Task *> temp_tasks = {};
     for (int i = 0; i < 7; i++)
     {
-        _week_view_elements.push_back(new UIButton(vector3(-0.875 + 0.25 * i, 0.575, 0), vector3(0.25, 0.125, 0), Color(146, 146, 146), Color(0, 0, 0), Color(0, 255, 0), 1, days[i], [this, i, week_start]()
+        _week_view_elements.push_back(new UITextfield(vector3(-0.875 + 0.25 * i, 0.575, 0), vector3(0.25, 0.125, 0), Color(146, 146, 146), Color(0, 0, 0), Color(0, 255, 0), 1, days[i], _text_renderer));
+        _week_view_elements.push_back(new UIButton(vector3(-0.875 + 0.25 * i, 0.275, 0), vector3(0.25, 0.5, 0), Color(), Color(0, 0, 0), Color(0, 0, 0), 1, std::to_string(_calendar.get_tasks_for_day(week_start + date::days{i}).size()) + " Tasks", [this, i, week_start]()
                                                    {
-                                                    _calendar.set_view_mode(Calendar::ViewMode::Day);
-                                                        _calendar.navigate_to_date(week_start + date::days{i});
-                                                        crupdate_day_mode(); 
-                                                        crupdate_date_switch_elements(); }, nullptr, _text_renderer));
-        temp_tasks = _calendar.get_tasks_for_day(week_start + date::days{i});
-        if (!temp_tasks.empty())
-        {
-        }
-    }
-    for (int i = 0; i < 12; i++)
-    {   
-        auto bkg = (i % 2 == 0) ? Color(100,100,100) : Color(50, 50, 50);
-        _week_view_elements.push_back(
-            new UIRectangle(vector3(-0.875, 0.445 - 0.11 * i, 0), vector3(1.75, 0.11, 0), bkg, Color(0, 0, 0), 0, _text_renderer));
+            _calendar.navigate_to_date(week_start + date::days{i});
+            _calendar.set_view_mode(Calendar::ViewMode::Day);
+           crupdate_date_switch_elements();
+           crupdate_day_mode(); }, nullptr, _text_renderer));
     }
 }
 void UIManager::crupdate_month_mode()
 {
     _month_view_elements = {
-        new UIRectangle(vector3(), vector3(), Color(), Color(), 0), // общий фон
-                                                                    // дни недели
-        new UITextfield(vector3(), vector3(), Color(176, 146, 146), Color(), Color(0, 255, 0), 0, "Mon", _text_renderer),
-        new UITextfield(vector3(), vector3(), Color(176, 146, 146), Color(), Color(0, 255, 0), 0, "Tue", _text_renderer),
-        new UITextfield(vector3(), vector3(), Color(176, 146, 146), Color(), Color(0, 255, 0), 0, "Wen", _text_renderer),
-        new UITextfield(vector3(), vector3(), Color(176, 146, 146), Color(), Color(0, 255, 0), 0, "Thu", _text_renderer),
-        new UITextfield(vector3(), vector3(), Color(176, 146, 146), Color(), Color(0, 255, 0), 0, "Fri", _text_renderer),
-        new UITextfield(vector3(), vector3(), Color(176, 146, 146), Color(), Color(0, 255, 0), 0, "Sat", _text_renderer),
-        new UITextfield(vector3(), vector3(), Color(176, 146, 146), Color(), Color(0, 255, 0), 0, "Sun", _text_renderer),
-
-        // набор кнопок для каждого дня месяца
-        // new UIButton(),
-        // new Button(),
-        // new Button(),
-        //<...>
+        new UIRectangle(vector3(-0.9, 0.6, 0), vector3(1.8, 1.5, 0), Color(), Color(100, 100, 100), 1, _text_renderer), // общий фон
     };
+    const char *days[] = {"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"};
+    auto curr_date = _calendar.get_current_date();
+    auto week_start = date::sys_days(date::sys_days(curr_date) - (date::weekday(date::sys_days(curr_date)) - date::Monday));
+
+    auto start_wkd = date::weekday(date::year_month_day(curr_date.year(), curr_date.month(), date::day{1}));
+    auto days_count = (date::sys_days(date::year_month_day(date::year_month_day_last(curr_date.year(), date::month_day_last(curr_date.month())))) -
+                       date::sys_days(date::year_month_day(curr_date.year(), curr_date.month(), date::day{1})))
+                          .count() +
+                      1;
+    std::vector<Task *> temp_tasks = {};
+    for (int i = 0; i < 7; i++)
+    {
+        _month_view_elements.push_back(new UITextfield(vector3(-0.875 + 0.25 * i, 0.575, 0), vector3(0.25, 0.125, 0), Color(146, 146, 146), Color(0, 0, 0), Color(0, 255, 0), 1, days[i], _text_renderer));
+    }
+
+    float currY = 0.425;
+    UIButton *btn = nullptr;
+    for (int8_t i = 0; i < days_count; i++)
+    {
+        if ((i + 1) % 7 == 0)
+        {
+            currY -= 0.25;
+        }
+
+        btn = new UIButton(
+            vector3(-0.875 + date::weekday{(unsigned int)((i + 1) % 7)}.c_encoding() * 0.25, currY, 0),
+            vector3(0.25, 0.25, 0),
+            Color(),
+            Color(0, 0, 0),
+            Color(0, 0, 0),
+            0,
+            std::to_string(i),
+            [this, i, curr_date]()
+            {
+                _calendar.navigate_to_date(date::year_month_day(curr_date.year(), curr_date.month(), date::day{(unsigned int)(i + 1)}));
+                _calendar.set_view_mode(Calendar::ViewMode::Day);
+                crupdate_date_switch_elements();
+                crupdate_day_mode();
+            },
+            nullptr, _text_renderer);
+        btn->OnHover = [btn](){
+            btn->BackgroundColor = Color(100,100, 100);
+            btn->BorderWidth = 1;
+        };
+        _month_view_elements.push_back(btn);
+    }
 }
 #endif

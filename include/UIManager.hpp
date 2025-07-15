@@ -320,7 +320,9 @@ void UIManager::crupdate_day_mode()
     {
         _day_view_elements.push_back(new UICheckbox(vector3(-0.8f, 0.5f - 0.1 * i, 0), vector3(0.05, 0.05, 0), Color(), Color(0, 0, 0), Color(0, 0, 1), 1, tasks[i]->get_title(), nullptr, _text_renderer));
     }
-    _day_view_elements.push_back(new UITextfield(vector3(0.05, 0.545, 0),  vector3(0.84, 0.25, 0), Color(), Color(0,0,0), Color(0,0,0), 1, "PLAIN TEXT", _text_renderer));
+    auto newField = new UITextfield(vector3(0.05, 0.5, 0),  vector3(0.75, 0.125, 0), Color(), Color(0,0,0), Color(0,0,0), 1, "PLAIN TEXT", _text_renderer);
+    newField->make_inputable();
+    _day_view_elements.push_back(newField);
 
 }
 void UIManager::crupdate_week_mode()

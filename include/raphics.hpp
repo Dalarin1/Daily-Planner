@@ -757,8 +757,6 @@ public:
     void handle_click() override
     {
         m_focused = true; // Упрощённая реализация
-
-        BackgroundColor = Color(100, 0, 0);
     }
 
     void draw(unsigned int shader) const override
@@ -778,10 +776,10 @@ public:
     }
     void set_focus(bool focus)
     {
-        m_focused = focus;
+        if(m_imputable){m_focused = focus;}
     }
      void handle_key_input(int key, int action) {
-        if (!m_focused || action != GLFW_PRESS) return;
+        if (!m_focused || action != GLFW_PRESS || !m_imputable) return;
 
         switch (key) {
             case GLFW_KEY_BACKSPACE:
@@ -818,7 +816,7 @@ public:
 
     void handle_char_input(unsigned int codepoint)
     {
-        if (!m_focused)
+        if (!m_focused || !m_imputable)
             return;
         Text.insert(m_cursorPos, 1, static_cast<char>(codepoint));
         m_cursorPos++;

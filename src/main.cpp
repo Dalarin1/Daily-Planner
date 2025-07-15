@@ -13,6 +13,45 @@ Open-source Focus: Contributors can add recurring tasks, theme customization, an
 #include <iostream>
 #include "UIManager.hpp"
 
+class InputManager
+{
+	UIManager *m_ui_manager;
+
+public:
+	InputManager(UIManager *ui_manager) : m_ui_manager(ui_manager) {}
+
+	// Статические методы для GLFW коллбэков
+	static void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods)
+	{
+		// Получаем экземпляр InputManager из пользовательских данных окна
+		auto *inputManager = static_cast<InputManager *>(glfwGetWindowUserPointer(window));
+		if (inputManager && inputManager->m_ui_manager->m_active_textfield)
+		{
+			inputManager->m_ui_manager->m_active_textfield->handle_key_input(key, action);
+		}
+	}
+
+	static void char_callback(GLFWwindow *window, unsigned int codepoint)
+	{
+		auto *inputManager = static_cast<InputManager *>(glfwGetWindowUserPointer(window));
+		if (inputManager && inputManager->m_ui_manager->m_active_textfield)
+		{
+			inputManager->m_ui_manager->m_active_textfield->handle_char_input(codepoint);
+		}
+	}
+
+	static void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
+	{
+		auto *inputManager = static_cast<InputManager *>(glfwGetWindowUserPointer(window));
+		if (!inputManager || button != GLFW_MOUSE_BUTTON_LEFT || action != GLFW_PRESS)
+			return;
+
+		double x, y;
+		glfwGetCursorPos(window, &x, &y);
+		inputManager->m_ui_manager->handle_click(x, y, 800, 800);
+	}
+};
+
 void processInput(GLFWwindow *window)
 {
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
@@ -23,7 +62,6 @@ void processInput(GLFWwindow *window)
 
 int main()
 {
-
 	// Инициализация GLFW
 	glfwInit();
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -66,6 +104,17 @@ int main()
 	ui.crupdate_week_mode();
 	ui.crupdate_month_mode();
 	ui.crupdate_date_switch_elements();
+
+	InputManager inputManager = InputManager(&ui);
+
+	glfwSetWindowUserPointer(window, &inputManager);
+
+	glfwSetCharCallback(window, &InputManager::char_callback);
+	glfwSetKeyCallback(window, &InputManager::key_callback);
+	glfwSetMouseButtonCallback(window, &InputManager::mouse_button_callback);
+
+	// glfwSetWindowUserPointer(window, window);
+
 	glViewport(0, 0, 800, 800);
 	double x, y;
 	const int targetFPS = 30; // Достаточно для интерфейса
@@ -82,10 +131,10 @@ int main()
 
 		glfwGetCursorPos(window, &x, &y);
 		ui.update(x, y, 800, 800);
-		if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
-		{
-			ui.handle_click(x, y, 800, 800);
-		}
+		// if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
+		// {
+		// 	ui.handle_click(x, y, 800, 800);
+		// }
 		ui.draw_calendar();
 		ui_shader_program.use();
 		glfwSwapBuffers(window);

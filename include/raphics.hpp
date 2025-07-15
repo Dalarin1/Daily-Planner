@@ -90,7 +90,7 @@ public:
         }
         else if (!newHoverState && is_hovered)
         {
-            reset_colors();
+            reset_state();
             is_hovered = false;
         }
     }
@@ -121,7 +121,7 @@ public:
         glDrawArrays(GL_LINE_LOOP, 0, 4);
         glBindVertexArray(0);
     }
-    void reset_colors()
+    void reset_state()
     {
         current_bkg_color = base_bkg_color;
         current_border_color = base_border_color;
@@ -295,7 +295,7 @@ public:
         m_currentBorderColor = color;
     }
 
-    void reset_colors()
+    void reset_state()
     {
         m_currentBackgroundColor = m_baseBackgroundColor;
         m_currentBorderColor = m_baseBorderColor;
@@ -350,7 +350,7 @@ public:
         }
         else if (!newHoverState && IsHovered)
         {
-            Box.reset_colors();
+            Box.reset_state();
             IsHovered = false;
         }
     }
@@ -413,7 +413,7 @@ public:
         }
         else if (!newHoverState && IsHovered)
         {
-            Box.reset_colors();
+            Box.reset_state();
             IsHovered = false;
         }
     }
@@ -464,13 +464,14 @@ public:
         return Box.contains_point(x, y, windowWidth, windowHeight);
     }
 };
-# endif
+#endif
 // Базовый класс для прямоугольных элементов
 class UIRectangle : public IUIElement
 {
 protected:
     Color m_baseBackgroundColor;
     Color m_baseBorderColor;
+    int m_baseBorderWidth;
     std::shared_ptr<TextRenderer> m_textRenderer; // Общий рендерер текста
     GLuint m_vao;
     GLuint m_vbo;
@@ -502,6 +503,7 @@ public:
     {
         m_baseBackgroundColor = background;
         m_baseBorderColor = border;
+        m_baseBorderWidth = border_width;
         setup_buffers();
     }
 
@@ -541,7 +543,7 @@ public:
         }
         glBindVertexArray(0);
     }
-    void handle_click(){}
+    void handle_click() {}
     bool contains_point(double x, double y, int w, int h) const override
     {
         const float nx = 2.0f * (x / w) - 1.0f;
@@ -552,10 +554,11 @@ public:
     Color get_base_background_color() const { return m_baseBackgroundColor; }
     Color get_base_border_color() const { return m_baseBorderColor; }
 
-    void reset_colors()
+    void reset_state()
     {
         BackgroundColor = m_baseBackgroundColor;
         BorderColor = m_baseBorderColor;
+        BorderWidth = m_baseBorderWidth;
     }
     void set_base_background_color(const Color &color) { m_baseBackgroundColor = color; }
     void set_base_border_color(const Color &color) { m_baseBorderColor = color; }
@@ -631,8 +634,9 @@ public:
         OnClick = onClick;
         OnHover = onHover;
     }
-    void update(double mouseX, double mouseY, int windowWidth, int windowHeight) override{
-         bool newHoverState = contains_point(mouseX, mouseY, windowWidth, windowHeight);
+    void update(double mouseX, double mouseY, int windowWidth, int windowHeight) override
+    {
+        bool newHoverState = contains_point(mouseX, mouseY, windowWidth, windowHeight);
 
         if (newHoverState && !m_hovered)
         {
@@ -642,7 +646,7 @@ public:
         }
         else if (!newHoverState && m_hovered)
         {
-            reset_colors();
+            reset_state();
             m_hovered = false;
         }
     }
@@ -654,7 +658,7 @@ public:
             m_textRenderer->render_text_GL_coords(
                 Text,
                 Bounds.Location.X,
-                Bounds.Location.Y -Bounds.Size.Y,
+                Bounds.Location.Y - Bounds.Size.Y,
                 1.0f,
                 TextColor,
                 800,
@@ -670,6 +674,7 @@ private:
     bool m_checked = false;
     Color m_checkedColor;
     Color m_uncheckedColor;
+
 public:
     std::string Text;
     Color TextColor;
@@ -728,7 +733,9 @@ public:
 class UITextfield : public UIRectangle
 {
 private:
+    bool m_imputable = false;
     bool m_focused;
+    unsigned int m_cursorPos;
 
 public:
     std::string Text;
@@ -744,11 +751,14 @@ public:
                 std::shared_ptr<TextRenderer> renderer = nullptr)
         : UIRectangle(pos, size, bg, border, border_width, renderer),
           Text(text),
-          TextColor(textColor) {}
+          TextColor(textColor),
+          m_cursorPos(text.size()) {}
 
     void handle_click() override
     {
         m_focused = true; // Упрощённая реализация
+
+        BackgroundColor = Color(100, 0, 0);
     }
 
     void draw(unsigned int shader) const override
@@ -766,4 +776,55 @@ public:
                 800);
         }
     }
+    void set_focus(bool focus)
+    {
+        m_focused = focus;
+    }
+     void handle_key_input(int key, int action) {
+        if (!m_focused || action != GLFW_PRESS) return;
+
+        switch (key) {
+            case GLFW_KEY_BACKSPACE:
+                if (!Text.empty() && m_cursorPos > 0) {
+                    Text.erase(m_cursorPos - 1, 1);
+                    m_cursorPos--;
+                }
+                break;
+                
+            case GLFW_KEY_DELETE:
+                if (!Text.empty() && m_cursorPos < Text.length()) {
+                    Text.erase(m_cursorPos, 1);
+                }
+                break;
+                
+            case GLFW_KEY_LEFT:
+                if (m_cursorPos > 0) m_cursorPos--;
+                break;
+                
+            case GLFW_KEY_RIGHT:
+                if (m_cursorPos < Text.length()) m_cursorPos++;
+                break;
+                
+            case GLFW_KEY_HOME:
+                m_cursorPos = 0;
+                break;
+                
+            case GLFW_KEY_END:
+                m_cursorPos = Text.length();
+                break;
+
+        }
+    }
+
+    void handle_char_input(unsigned int codepoint)
+    {
+        if (!m_focused)
+            return;
+        Text.insert(m_cursorPos, 1, static_cast<char>(codepoint));
+        m_cursorPos++;
+    }
+    void make_inputable(){
+        m_imputable = true;
+    }
+    bool is_imputable(){return m_imputable;}
 };

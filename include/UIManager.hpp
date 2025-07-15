@@ -38,6 +38,7 @@ public:
     // std::map<int, UICheckbox *> _task_checkboxes;
 
     // это не лишнее
+    UITextfield *m_active_textfield = nullptr;
     std::map<Calendar::ViewMode, UIButton *> _view_switch_buttons;
     std::vector<IUIElement *> _date_switch_elements;
     std::vector<IUIElement *> _top_menu;
@@ -56,45 +57,6 @@ UIManager::UIManager(std::shared_ptr<ShaderProgram> ui_program, std::shared_ptr<
 
     crupdate_view_switch_buttons();
     crupdate_date_switch_elements();
-    /*
-        _task_checkboxes = {};
-        auto curr_date = _calendar.get_current_date();
-        auto week_start = date::sys_days(date::sys_days(curr_date) - (date::weekday(date::sys_days(curr_date)) - date::Monday));
-
-        _week_view_buttons = {};
-        for (int8_t i = 0; i < 7; i++)
-        {
-            _week_view_buttons.push_back(new Button(vector3(-0.75 + 0.25 * i, 0.5, 0), vector3(0.125, 0.8, 0), Color(), Color(0, 0, 0), [this, i, week_start]()
-                                                    {_calendar.navigate_to_date(week_start + date::days{i});_calendar.set_view_mode(Calendar::ViewMode::Day); }, nullptr));
-        }
-
-        _month_view_buttons = {};
-        auto start_wkd = date::weekday(date::year_month_day(curr_date.year(), curr_date.month(), date::day{1}));
-        auto days_count = (date::sys_days(date::year_month_day(date::year_month_day_last(curr_date.year(), date::month_day_last(curr_date.month())))) -
-                           date::sys_days(date::year_month_day(curr_date.year(), curr_date.month(), date::day{1})))
-                              .count() +
-                          1;
-        const float startX = 100.0f, startY = 600.0f;
-        float currY = 0.5;
-        for (int8_t i = 0; i < days_count; i++)
-        {
-            if ((i + 1) % 7 == 0)
-            {
-                currY -= 0.125;
-            }
-            _month_view_buttons.push_back(
-                new Button(
-                    vector3(-0.75 + date::weekday{(unsigned int)((i + 1) % 7)}.c_encoding() * 0.125, currY, 0),
-                    vector3(0.1, 0.1, 0),
-                    Color(),
-                    Color(0, 0, 0),
-                    [this, i, curr_date]()
-                    {
-                        _calendar.navigate_to_date(date::year_month_day(curr_date.year(), curr_date.month(), date::day{(unsigned int)(i + 1)}));
-                        _calendar.set_view_mode(Calendar::ViewMode::Day);
-                    },
-                    nullptr));
-}*/
 }
 UIManager::~UIManager()
 {
@@ -219,6 +181,13 @@ void UIManager::update(double mouseX, double mouseY, int windowWidth, int window
 }
 void UIManager::handle_click(double mouseX, double mouseY, int windowWidth, int windowHeight)
 {
+    if (m_active_textfield != nullptr)
+    {
+        if (!m_active_textfield->contains_point(mouseX, mouseY, windowWidth, windowHeight))
+        {
+            m_active_textfield = nullptr;
+        }
+    }
     for (auto &[_, btn] : _view_switch_buttons)
     {
         if (btn->contains_point(mouseX, mouseY, windowWidth, windowHeight))
@@ -229,23 +198,35 @@ void UIManager::handle_click(double mouseX, double mouseY, int windowWidth, int 
     switch (_calendar.get_view_mode())
     {
     case Calendar::ViewMode::Day:
-        for (auto &elem : _day_view_elements)
+        for (auto* elem : _day_view_elements)
         {
+
             if (elem->contains_point(mouseX, mouseY, windowWidth, windowHeight))
             {
                 elem->handle_click();
+                
+                if (auto* txtfield = dynamic_cast<UITextfield*>(elem)) // если элемент UITextfield
+                {
+                    m_active_textfield = txtfield;
+                }
+                // else if(m_active_textfield){
+                //     m_active_textfield->set_focus(false);
+                //     m_active_textfield = nullptr;
+                // }
+                
             }
         }
-        break;
+        break;        
     case Calendar::ViewMode::Week:
         for (auto &elem : _week_view_elements)
         {
             if (elem->contains_point(mouseX, mouseY, windowWidth, windowHeight))
             {
                 elem->handle_click();
+        
             }
         }
-        break;
+    break;
     case Calendar::ViewMode::Month:
         for (auto &elem : _month_view_elements)
         {
@@ -339,6 +320,8 @@ void UIManager::crupdate_day_mode()
     {
         _day_view_elements.push_back(new UICheckbox(vector3(-0.8f, 0.5f - 0.1 * i, 0), vector3(0.05, 0.05, 0), Color(), Color(0, 0, 0), Color(0, 0, 1), 1, tasks[i]->get_title(), nullptr, _text_renderer));
     }
+    _day_view_elements.push_back(new UITextfield(vector3(0.05, 0.545, 0),  vector3(0.84, 0.25, 0), Color(), Color(0,0,0), Color(0,0,0), 1, "PLAIN TEXT", _text_renderer));
+
 }
 void UIManager::crupdate_week_mode()
 {
@@ -398,7 +381,7 @@ void UIManager::crupdate_month_mode()
             Color(0, 0, 0),
             Color(0, 0, 0),
             0,
-            std::to_string(i),
+            std::to_string(i + 1),
             [this, i, curr_date]()
             {
                 _calendar.navigate_to_date(date::year_month_day(curr_date.year(), curr_date.month(), date::day{(unsigned int)(i + 1)}));
@@ -407,8 +390,9 @@ void UIManager::crupdate_month_mode()
                 crupdate_day_mode();
             },
             nullptr, _text_renderer);
-        btn->OnHover = [btn](){
-            btn->BackgroundColor = Color(100,100, 100);
+        btn->OnHover = [btn]()
+        {
+            btn->BackgroundColor = Color(100, 100, 100);
             btn->BorderWidth = 1;
         };
         _month_view_elements.push_back(btn);
